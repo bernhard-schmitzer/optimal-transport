@@ -1,0 +1,234 @@
+<!doctype html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>OTToolbox Documentation</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+	<script src="script.js"></script>
+</head>
+<body>
+<h1 id="header">OTToolbox_v0.1.2 : Documentation</h1>
+<div id="mainframe">
+	<h2 id="TOC">Table of Contents</h2>
+			<a href="#SecIntroduction" class="toch2">Introduction</a>
+			<a href="#SecAbout" class="toch3">About</a>
+			<a href="#SecRequirements" class="toch3">System Requirements</a>
+			<a href="#SecDisclaimer" class="toch3">Disclaimer &amp; License</a>
+			<a href="#SecContact" class="toch3">Contact</a>
+			<a href="#SecInstall" class="toch2">Installation</a>
+			<a href="#SecInstallOverview" class="toch3">Overview</a>
+			<a href="#SecInstallCompile" class="toch3">Compilation</a>
+			<a href="#SecInstallImport" class="toch3">Import in Python</a>
+			<a href="#SecExamples" class="toch2">Examples</a>
+			<a href="#SecExamplesShortCut" class="toch3">Examples for ShortCut</a>
+			<a href="#SecExamplesSparseSinkhorn" class="toch3">Examples for SparseSinkhorn</a>
+			<a href="#SecReferences" class="toch2">References</a>
+
+	<h2 id="SecIntroduction">Introduction</h2>
+
+		<h3 id="SecAbout">About</h3>
+			<p>OTToolbox is a toolbox for numerical optimal transport for <span class="code">Python 3</span> with <span class="code">numpy</span> and <span class="code">scipy</span>. The front end is written in <span class="code">Python 3</span> and several functions are provided by shared <span class="code">c++</span> libraries.</p>
+			
+			<p>It provides implementations for various algorithms for solving discrete optimal transport problems, via the linear programming formulation due to Kantorovich.
+			It includes a naive dense solver for reference and convenience. The main functionality are implementations of the sparse multi-scale linear program solver described in <a class="citation" href="#ReferenceSchmitzer2016a">[Schmitzer 2016a]</a> and the stabilized sparse Sinkhorn algorithm based on entropy regularization, as described in <a class="citation" href="#ReferenceSchmitzer2016b">[Schmitzer 2016b]</a>.
+			These two components will be referred to by <span class="emph">ShortCut</span> and <span class="emph">SparseSinkhorn</span> in the following. References to figures refer to figures in the respective articles.
+			Parts of the ShortCut algorithm have recently been included in the numerical benchmark <a class="citation" href="#ReferenceSchrieber2016">[Schrieber et al. 2016]</a>.
+			</p>
+			
+			<p>In this early stage there is no extensive documentation available. It is recommended to try to complete the installation and then look at some of the example files.</p>
+			
+			<p>Note that this is highly experimental software. It does virtually no safety checks on the users input data and will likely crash your Python session if invalid data is provided. See also <a class="intref" href="#SecDisclaimer">Disclaimer &amp; License</a>.</p>
+
+		<h3 id="SecRequirements">System Requirements</h3>
+			<p>Currently the toolbox is in a very early beta stage and no systematic testing for system compatibility has been performed.<br/>
+			So far it has been tested with:
+			<ul>
+				<li>Ubuntu [12.04, 14.04, 16.04], Python 3.4.3, numpy 1.11.2, scipy 0.15.1, g++ [4.6.3, 4.8.4, 5.4.0]
+				<li>OS X 10.9.5, Python 3.4.3, numpy 1.9.0, scipy 0.14.0
+			</ul>
+			Due to the way communication between Python and C++ is handled, it is likely that the toolbox will only work on 64bit operating systems.<br/>
+			If you are new to Python we recommend the <a href="https://www.continuum.io/">Anaconda distribution</a> (or <a href="http://conda.pydata.org/miniconda.html">Miniconda</a>) which provides a convenient way to set up a working Python environment. Moreover, while the toolbox can be operated from standard Python scripts, we highly recommend using <a href="http://jupyter.org/">jupyter</a> for interactive testing and development.</p>
+			
+			<p>In addition, ShortCut requires an external linear program solver. Currently, interfaces are provided for the following solvers:
+			<ul>
+				<li>ILOG CPLEX Optimization Studio (tested with versions 12.5 and 12.6.1). <a href="http://www.ibm.com/support/knowledgecenter/SSSA5P_12.6.1/ilog.odms.studio.help/Optimization_Studio/topics/COS_home.html">Online documentation</a>. For academic researchers CPLEX is available under the <a href="https://developer.ibm.com/academic/">IBM Academic Initiative</a>.
+				<li><a href="https://lemon.cs.elte.hu/trac/lemon">LEMON Graph Library 1.3.1</a>
+			</ul>
+			These external libraries cannot be directly provided with the toolbox. The user is kindly asked to obtain either of the two by themselves.</p>
+
+		<h3 id="SecDisclaimer">Disclaimer &amp; License</h3>
+			This toolbox is prototypical software, developed as part of ongoing research on efficient algorithms and should be considered experimental. It is distributed such that other researchers can test and reproduce published results as well as extend it.<br/>
+			It comes without any guarantees or warranty. Use at your own risk.<br/></p>
+			<p>This toolbox is released under the `Modified BSD License'. The full license text is given below.</p>
+			<div class="license">
+			<p>
+			Copyright (c) 2016, Bernhard Schmitzer<br/>
+			All rights reserved.</br><br/>
+			Redistribution and use in source and binary forms, with or without
+			modification, are permitted provided that the following conditions are
+			met:
+			</p>
+			<p>
+			(1) Redistributions of source code must retain the above copyright
+			notice, this list of conditions and the following disclaimer. 
+			</p>
+			<p>
+			(2) Redistributions in binary form must reproduce the above copyright
+			notice, this list of conditions and the following disclaimer in
+			the documentation and/or other materials provided with the
+			distribution.
+			</p>
+			<p>
+			(3) The name of the author may not be used to
+			endorse or promote products derived from this software without
+			specific prior written permission.
+			</p>
+			<p>
+			THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+			IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+			WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+			DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+			INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+			(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+			SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+			HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+			STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+			IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+			POSSIBILITY OF SUCH DAMAGE.
+			</p>
+			</div>
+		<h3 id="SecContact">Contact</h3>
+			<p>The toolbox is developed by Bernhard Schmitzer, currently a post-doctoral reasearcher at the University of M&uuml;nster, (<a href="http://wwwmath.uni-muenster.de/num/wirth/people/Schmitzer/">website</a>).
+			Feedback on how to make the toolbox more user-friendly, about bugs, successful installation on a new system configuration  or requests for additional features is much appreciated.</p>
+	<h2 id="SecInstall">Installation</h2>
+		<h3 id="SecInstallOverview">Overview</h3>
+			<p>Installation consists of two steps: compiling the <span class="code">c++</span> libraries and importing the front end modules into Python. Currently both steps require some manual handling by the user.</p>
+		<h3 id="SecInstallCompile">Compilation</h3>
+			Installing ShortCut requires steps 1-3, installing SparseSinkhorn requires steps 2 &amp; 4.
+			<ol>
+			<li><span class="parhead">Preparation for ShortCut:</span> If you want to compile the ShortCut component with some of the external libraries, you need to configure the build script first. To do so, open the file <span class="code">Solvers/compile_constants.sh</span> with a text editor. Find the sections for the CPLEX or Lemon specific settings and adjust the location to the libraries on your system. At least one must be provided to use the toolbox. Be sure to remove the comments in front of the lines that specify the include and linker information!
+			<li><span class="parhead">Compile Common Components:</span> ShortCut and SparseSinkhorn share some components. For compilation execute the script <span class="code">Solvers/compile_common.sh</span> from a terminal. Check for possible compiler and linker errors.
+			<li><span class="parhead">Compile ShortCut:</span> First execute the script <span class="code">Solvers/compile_shortcut.sh</span> from a terminal. Then, depending on which LP solver you want to use, run the corresponding compilation script: <span class="code">Solvers/compile_cplex.sh</span> for CPLEX and <span class="code">Solvers/compile_lemon.sh</span> for LEMON. Again, carefully check the output for compiler and linker errors.
+			<li><span class="parhead">Compile SparseSinkhorn:</span> Execute the script <span class="code">Solvers/compile_sinkhorn.sh</span> from a terminal.
+			</ol>
+		<h3 id="SecInstallImport">Import in Python</h3>
+			<p>After compilation it is important that Python knows where to look for the toolbox. This is achieved by the following commands (run within Python), where you must replace <span class="code">XXXX</span> by the appropriate location of the toolbox on your system. The directory <span class="code">/XXXX/OTToolbox_v0.1.2/</span> should contain the file <span class="code">CClasses.py</span>.</p>
+			<p class="code">
+				import sys<br/>
+				sys.path.append("/XXXX/OTToolbox_v0.1.2/")<br/>
+			</p>
+			<p><span class="note">Note:</span> In the example files, this is already done via relative paths, see the file <span class="code">Examples/lib/header_rootdir.py</span> for details.</p>
+			After this, the various modules of the toolbox can be imported in Python for example via:
+			<p class="code">
+				# dense linear program solvers, only available if compiled with corresponding external libraries<br/>
+				import Solvers.OT_CPLEX as OT_CPLEX<br/>
+				import Solvers.OT_Lemon as OT_Lemon<br/>
+				<br/>
+				# basic convenience functions, hierarchical partition handling<br/>
+				import OTTools<br/>
+				import OTTools.HierarchicalPartition as HierarchicalPartition<br/>
+				import Solvers.CostFunctionComputation as SolverCFC<br/>
+				<br/>
+				# ShortCut, only available if compiled with corresponding external libraries<br/>
+				import Solvers.ShortCutSolver as ShortCutSolver<br/>
+				import Solvers.ShortCutSolver_CPLEX as ShortCutSolver_CPLEX<br/>
+				import Solvers.ShortCutSolver_Lemon as ShortCutSolver_Lemon<br/>
+				<br/>
+				# SparseSinkhorn<br/>
+				import Solvers.Sinkhorn as Sinkhorn<br/>
+			</p>
+			We refer to the section on <a href="#SecExamples">Examples</a> to find out what the various modules do.
+	<h2 id="SecExamples">Examples</h2>
+		In the directory <span class="code">Examples/</span> some example files are provided. Most of them are IPython / jupyter notebooks (see <a href="#SecRequirements">Requirements</a>), which allow for a more interactive demonstration with embedded plots. All examples contain some explaining comments with the code.
+		
+		<h3 id="SecExamplesShortCut">Examples for ShortCut</h3>
+			These examples require that the ShortCut Code with either CPLEX or Lemon libraries is compiled.
+			<table>
+			<thead>
+			<tr class="tableHead"><td>Filename</td><td>Description</td></tr>
+			<tr class="tableInterhead"><td colspan="2">Basic LP Solver</td></tr>
+			</thead
+			<tr><td>Dense-01-CPLEX.py</td><td>Very simple test file which solves a dense transport problem with CPLEX. Can be used to verify whether installation worked properly.</td></tr>
+			<tr><td>Dense-01-Lemon.py</td><td><p>Very simple test file which solves a dense transport problem with LEMON. Can be used to verify whether installation worked properly.</p><p><span class="note">Note:</span> The LEMON solver is a bit more elaborate to set up than the CPLEX solver, since marginals and cost function must be truncated to a discrete grid. Therefore most further examples use the CPLEX solver. Should CPLEX not be available to you, this script explains how to set up problems with LEMON and how to adapt other scripts if required. For the set-up of the ShortCut-Solver with Lemon see also <span class="code">Example-ShortCutSolver-01-Basic-Lemon.ipynb</span>.</p></td></tr>
+			<thead><tr class="tableInterhead"><td colspan="2">ShortCut Solver</td></tr></thead>
+			<tr><td>ShortCut-01-Basic-CPLEX.ipynb</td><td>Basic demonstration of the ShortCut-Solver on a small test problem, comparison with the naive dense solver, using dense data structures. Uses CPLEX as internal LP solver.</td></tr>
+			<tr><td>ShortCut-01-Basic-Lemon.ipynb</td><td>Basic demonstration of the ShortCut-Solver on a small test problem, comparison with the naive dense solver, using dense data structures. Uses Lemon as internal LP solver.</td></tr>
+			<tr><td>ShortCut-02-SparseDataStructures.ipynb</td><td>Solving a larger test problem with the ShortCut-Solver on sparse data structures. Comparison to the dense solver is no longer possible.</td></tr>
+			<tr><td>ShortCut-03-PaddingTest.ipynb</td><td>The construction of shielding neighourboods is compared with the padding method proposed in <a class="citation" href="#ReferenceOberman2015">[Oberman &amp; Ruan 2015]</a>. It is shown on an extreme test problem that the padding method will not always provide a globally optimal result.</td></tr>
+			</table>
+		
+		<h3 id="SecExamplesSparseSinkhorn">Examples for SparseSinkhorn</h3>
+			<p>These examples require that the SparseSinkhorn Code is compiled. The SparseSinkhorn solver is more complicated to set up, as it requires much more parameters to be set. This is due to the wide variety in modelling aspects that need to be chosen (e.g. standard transport, unbalanced transport, barycenter or gradient flows with various parameters), and computational choices (e.g. data structure for kernel [dense or truncated], epsilon-scaling, convergence criteria...).
+			Also the code is currently kept extremely modular, to simplify adjustments and development. Therefore, the introduction sequence is somewhat lengthy.</p>
+			<p>For these reasons the examples are run in a different way. There are two `execution notebooks', <span class="code">SparseSinkhorn-01-OptimalTransport.ipynb</span> and <span class="code">SparseSinkhorn-02-Barycenter.ipynb</span> which first load configuration parameters from separate files and then solve the specified problem. For the first, there is also a script version, <span class="code">SparseSinkhorn-01-OptimalTransport.py</span>. The script only solves the problem and provides verbose output on the multi-scale scheme, log-stabilization and runtime. It terminates and discards any results. The notebooks provide some elementary post-processing for visualizing the results.
+			How to select the configuration files is explained in the jupyter notebooks and the header section of the <span class="code">py</span> script.			
+			We will now briefly discuss the prepared configuration files.</p>
+			<table>
+			<thead>
+			<tr class="tableHead"><td>Configuration File Tag</td><td>Description</td></tr>
+			<tr class="tableInterhead"><td colspan="2">(Un-)balanced transport: run with SparseSinkhorn-01-OptimalTransport.ipynb or SparseSinkhorn-01-OptimalTransport.py</td></tr>
+			</thead>
+			<tr><td>cfg/Sinkhorn/CompareEnhancements/1</td><td>
+				Example for comparison of enhancements in Fig. 2.
+				This uses the standard dense Sinkhorn algorithm, only with log-stabilization, at epsilon=0.1. Will take many iterations and a lot of time. We recommend only running this with the script.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/CompareEnhancements/2</td><td>
+				Example for comparison of enhancements in Fig. 2.
+				This uses log-stabilization and epsilon-scaling for final value epsilon=0.1. We recommend only running this with the script.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/CompareEnhancements/3</td><td>
+				Example for comparison of enhancements in Fig. 2.
+				This uses log-stabilization, epsilon-scaling and truncated kernels for final value epsilon=0.1. We recommend only running this with the script.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/CompareEnhancements/4</td><td>
+				Example for comparison of enhancements in Fig. 2.
+				This uses the fully enhanced algorithm with log-stabilization, epsilon-scaling, truncated kernels and the coarse-to-fine scheme for final value epsilon=0.1. We recommend only running this with the script.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/ImageBenchmark/OT_256</td><td>
+				Example for Fig. 3 for 256x256 grids. Uses standard optimal transport.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/ImageBenchmark/WF_256</td><td>
+				Similar, but uses Wasserstein-Fisher-Rao distance, not explicitly shown in paper.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/Gaussians/OT_128_000-001</td><td>
+				Computes standard optimal transport between two pairs of Gaussians with different mass. We recommend trying the post-processing with displacement interpolation in the jupyter notebook. It shows how one Gaussian must send mass to the other to balance the overall distribution.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/Gaussians/WF_128_000-001</td><td>
+				Computes Wasserstein-Fisher-Rao transport between two pairs of Gaussians with different mass. We recommend trying the post-processing with displacement interpolation in the jupyter notebook. Here the mass can be balanced by creation / annihilation, leading to a more natural interpolation.
+				</td></tr>
+			<thead>
+			<tr class="tableInterhead"><td colspan="2">(Un-)balanced barycenters: run with SparseSinkhorn-02-Barycenter.ipynb</td></tr>
+			</thead>
+			<tr><td>cfg/Sinkhorn/Barycenter/OT_simple_1-2-1</td><td>
+				Computes a Wasserstein barycenter, as shown in Fig. 6.
+				</td></tr>
+			<tr><td>cfg/Sinkhorn/Barycenter/WF_three_1-2-1</td><td>
+				Computes a Wasserstein-Fisher-Rao barycenter, as shown in Fig. 7.
+				</td></tr>
+			</table>
+		
+	<h2 id="SecReferences">References</h2>
+	<p class="reference" id="ReferenceOberman2015">[Oberman &amp; Ruan 2015]
+		<span class="author">A. Oberman and Y. Ruan</span>:
+		<span class="title">An efficient linear programming method for Optimal Transportation</span>,
+		<span class="ref"><a href="http://arxiv.org/abs/1509.03668">http://arxiv.org/abs/1509.03668</a></span>
+		</p>
+	<p class="reference" id="ReferenceSchmitzer2016a">[Schmitzer 2016a]
+		<span class="author">B. Schmitzer</span>:
+		<span class="title">A Sparse Multi-Scale Algorithm for Dense Optimal Transport</span>,
+		<span class="ref">Journal of Mathematical Imaging and Vision, 56 (2): 238-259 (2016), <a href="http://arxiv.org/abs/1510.05466">http://arxiv.org/abs/1510.05466</a></span>
+		</p>
+	<p class="reference" id="ReferenceSchmitzer2016b">[Schmitzer 2016b]
+		<span class="author">B. Schmitzer</span>:
+		<span class="title">Stabilized Sparse Scaling Algorithms for Entropy Regularized Transport Problems</span>,
+		<span class="ref"><a href="https://arxiv.org/abs/1610.06519">https://arxiv.org/abs/1610.06519</a></span>
+		</p>
+	<p class="reference" id="ReferenceSchrieber2016">[Schrieber et al. 2016]
+		<span class="author">J. Schrieber, D. Schuhmacher and C. Gottschlich</span>:
+		<span class="title">DOTmark - A Benchmark for Discrete Optimal Transport</span>,
+		<span class="ref"><a href="https://arxiv.org/abs/1610.03368">https://arxiv.org/abs/1610.03368</a></span>
+		</p>
+	
+</div>
+</body>
+</html>

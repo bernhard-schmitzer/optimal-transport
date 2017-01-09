@@ -1,0 +1,22 @@
+setup_f1	data/density-img/f-000-064.mat
+setup_f2	data/density-img/f-001-064.mat
+setup_posScale	1
+setup_totalMass	1
+setup_constOffset	1E-7
+setup_doAbsorption	1
+setup_type_kernel	dense
+hierarchy_depth	0
+hierarchy_lTop	1
+eps_target	1E-1
+eps_start	1E1
+eps_steps	20
+eps_boxScale	1
+eps_boxScale_power	2
+#sparsity_kThresh
+adaption_scalingBound	1E50
+adaption_scalingLowerBound	1E50
+sinkhorn_error	1E-6
+sinkhorn_maxOuter	10000000
+sinkhorn_nInner	100
+sinkhorn_maxRepeats	100
+model_transportModel	ot
