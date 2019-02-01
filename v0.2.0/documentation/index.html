@@ -1,0 +1,304 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>OTToolbox Documentation</title>
+<style>
+body {
+	background-color: #f0f0f0;
+	margin: 10px;
+	font-family: Helvetica;
+	font-size: 13pt;
+}
+
+td {
+	vertical-align: top;
+}
+
+a {
+	text-decoration: underline;
+	color: #075eb3;
+}
+
+img {
+	border: none;
+}
+
+
+#mainframe {
+	boder-left: 1px solid #a0a0a0;
+	boder-right: 1px solid #a0a0a0;
+	boder-bottom: 1px solid #a0a0a0;
+	padding: 10px;
+	margin-top: 0px;
+	background-color: #ffffff;
+	margin: auto;
+}
+
+#header {
+	background-color: #065199;
+	color: #ffffff;
+	margin: 0px;
+	padding-left: 10px;
+	padding-right: 10px;
+	padding-top: 10px;
+	padding-bottom: 10px;
+	margin: auto;
+	}
+	
+#subtitle {
+	padding-top: 0px;
+	margin-top: 0px;
+	font-weight: bold;
+}
+
+h2 {
+	background-color: #f0f0f0;
+	color: #065199;
+}
+
+h3 {
+	background-color: #f0f0f0;
+}
+
+span.emph {
+	text-decoration: none;
+	font-weight: bold;
+}
+
+span.note {
+	text-decoration: none;
+	font-weight: bold;
+}
+
+span.parhead {
+	text-decoration: none;
+	font-weight: bold;
+}
+
+span.code {
+	font-family: Courier;
+}
+
+p {
+	margin-top: 0px;
+}
+
+p.code {
+	margin: 1em 10px 1em 10px;
+	padding: 5px 10px 5px 10px;
+	background-color: #f0f0f0;
+	border: 1pt dashed #808080;
+	font-family: Courier;
+}
+
+p.reference span.title {
+	font-weight: bold;
+}
+
+div.license {
+	margin: 1em 10px 1em 10px;
+	padding: 5px 10px 5px 10px;
+	background-color: #f0f0f0;
+	border: 1pt dashed #808080;
+	font-family: Courier;
+}
+
+a.toch2 {
+	display: block;
+	margin-left: 10px;
+	font-weight: bold;
+}
+
+a.toch3 {
+	display: block;
+	margin-left: 20px;
+}
+
+
+table, th, td {
+	border-collapse: collapse;
+}
+
+table {
+	margin: 0.5em 1em 0.5em 1em;
+}
+
+td {
+	margin: 0px;
+	padding: 2px;
+	border: 1px solid #808080;
+	/*border-top: 1px solid #808080;*/
+}
+
+table thead td {
+	background-color: #f0f0f0;
+	font-weight: bold;
+}
+</style>
+</head>
+<body>
+<h1 id="header">OTToolbox_v0.2.0 : Documentation</h1>
+<div id="mainframe">
+<h2 id="TOC">Table of Contents</h2>
+		<a href="#SecIntroduction" class="toch2">Introduction</a>
+		<a href="#SecAbout" class="toch3">About</a>
+		<a href="#SecRequirements" class="toch3">System Requirements</a>
+		<a href="#SecDisclaimer" class="toch3">Disclaimer &amp; License</a>
+		<a href="#SecContact" class="toch3">Contact</a>
+		<a href="#SecInstall" class="toch2">Installation</a>
+		<a href="#SecExamples" class="toch2">Examples</a>
+		<a href="#SecReferences" class="toch2">References</a>
+
+<h2 id="SecIntroduction">Introduction</h2>
+
+<h3 id="SecAbout">About</h3>
+	<p>OTToolbox v0.2.x is a toolbox for numerical optimal transport implemented in <span class="code">C++</span>. In due time we expect to provide bindings for various environments such as <span class="code">Python</span>, <span class="code">Matlab</span>, <span class="code">R</span>, etcetera.</p>
+	<p>Version 0.2.0 is even more experimental than the previous version. Everything here is extremely improvised and preliminary.</p>
+			
+	<p>It provides implementations for various algorithms for solving discrete optimal transport problems, via the linear programming formulation due to Kantorovich.
+	It includes a naive dense solver for reference and convenience. The main functionality are implementations of the sparse multi-scale linear program solver described in <a class="citation" href="#ReferenceSchmitzer2016a">[Schmitzer 2016a]</a> and the stabilized sparse Sinkhorn algorithm based on entropy regularization, as described in <a class="citation" href="#ReferenceSchmitzer2016b">[Schmitzer 2016b]</a>.
+	These two components will be referred to by <span class="emph">ShortCut</span> and <span class="emph">SparseSinkhorn</span> in the following. References to figures refer to figures in the respective articles.
+	Parts of the ShortCut algorithm have been included in the numerical benchmark <a class="citation" href="#ReferenceSchrieber2016">[Schrieber et al. 2016]</a>.
+	</p>
+			
+	<p>In this early stage there is no extensive documentation available. It is recommended to try to complete the installation and then look at some of the example files.</p>
+			
+	<p>Note that this is highly experimental software. It does virtually no safety checks on the users input data and will likely segfault if invalid data is provided. See also <a class="intref" href="#SecDisclaimer">Disclaimer &amp; License</a>.</p>
+
+<h3 id="SecRequirements">System Requirements</h3>
+	<p>Installation of the toolbox requires</p>
+	<ul>
+		<li> reasonably recent versions of a C++ compiler, cmake and GNU Make.
+	</ul>
+	<p>Currently the software is in a very early beta stage and no systematic testing for system compatibility has been performed.<br/>
+	So far it has been tested with:</p>
+	<ul>
+		<li>Ubuntu 16.04, g++ 5.4.0, cmake 3.5.1, GNU Make 4.1
+	</ul>
+	<p>In addition, <span class="emph">ShortCut</span> requires an external linear program solver. Currently, interfaces are provided for the following solvers:</p>
+	<ul>
+		<li>ILOG CPLEX Optimization Studio (tested with versions 12.5 and 12.6.1). <a href="http://www.ibm.com/support/knowledgecenter/SSSA5P_12.6.1/ilog.odms.studio.help/Optimization_Studio/topics/COS_home.html">Online documentation</a>. For academic researchers CPLEX is available under the <a href="https://developer.ibm.com/academic/">IBM Academic Initiative</a>.
+		<li><a href="https://lemon.cs.elte.hu/trac/lemon">LEMON Graph Library 1.3.1</a>
+	</ul>
+	<p>
+	The <span class="emph">SparseSinkhorn</span> solver requires the eigen library, version 3 (tested with version 3.2.92). On Linux it can usually be installed via the package manager or it can be obtained at <a href="http://eigen.tuxfamily.org/">http://eigen.tuxfamily.org/</a>.</p>
+	
+	<p>
+	These external libraries cannot be directly provided with the toolbox. The user is kindly asked to obtain what they need by themselves.</p>
+
+<h3 id="SecDisclaimer">Disclaimer &amp; License</h3>
+	This toolbox is prototypical software, developed as part of ongoing research on efficient algorithms and should be considered experimental. It is distributed such that other researchers can test and reproduce published results as well as extend it.<br/>
+	It comes without any guarantees or warranty. Use at your own risk.<br/></p>
+	<p>This toolbox is released under the `Modified BSD License'. The full license text is given below.</p>
+	<div class="license">
+	<p>
+	Copyright (c) 2019, Bernhard Schmitzer<br/>
+	All rights reserved.</br><br/>
+	Redistribution and use in source and binary forms, with or without
+	modification, are permitted provided that the following conditions are
+	met:
+	</p>
+	<p>
+	(1) Redistributions of source code must retain the above copyright
+	notice, this list of conditions and the following disclaimer. 
+	</p>
+	<p>
+	(2) Redistributions in binary form must reproduce the above copyright
+	notice, this list of conditions and the following disclaimer in
+	the documentation and/or other materials provided with the
+	distribution.
+	</p>
+	<p>
+	(3) The name of the author may not be used to
+	endorse or promote products derived from this software without
+	specific prior written permission.
+	</p>
+	<p>
+	THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+	IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+	WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+	DISCLAIMED. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT,
+	INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+	(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+	SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+	HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+	STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+	IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+	POSSIBILITY OF SUCH DAMAGE.
+	</p>
+	</div>
+<h3 id="SecContact">Contact</h3>
+	<p>The toolbox is developed by Bernhard Schmitzer, currently at the Technical University of M&uuml;nchen, (<a href="http://wwwmath.uni-muenster.de/num/wirth/people/Schmitzer/">github repository</a>).
+	Feedback on how to make the toolbox more user-friendly, about bugs, successful installation on a new system configuration  or requests for additional features is much appreciated.</p>
+
+<h2 id="SecInstall">Installation</h2>
+<p>Installation and usage consists of the following steps, which will be detailed below:</p>
+<ul>
+<li> installing external libraries if required (CPLEX or LEMON)
+<li> configuring cmake
+<li> compiling the library
+<li> including the library to your own project
+</ul>
+Upon unpacking / pulling the repository from github the root directory of the library is the one that contains the folders <span class="code">src/</span> and <span class="code">examples/</span>. All following paths will be relative to the root directory.
+
+<h4>Installing external libraries</h4>
+If you want to use the ShortCut solver you first need to install CPLEX and/or the LEMON library. For the Sinkhorn solver you need the eigen library. Please see <a href="#SecRequirements">System Requirements</a> for references to the respective libraries.
+<h4>Configuring cmake</h4>
+For now I suggest to configure cmake by directly editing <span class="code">src/CMakeLists.txt</span>. The following steps should be considered:
+<ul>
+<li>For now I recommend leaving <span class="code">SET_VERBOSE</span> on <span class="code">ON</span>.
+<li>For using <span class="emph">ShortCut</span> either <span class="code">USE_CPLEX</span> or <span class="code">USE_LEMON</span> have to be turned on. If you turn one or both of these options on you need to set <span class="code">CPLEX_LIBRARY</span>, <span class="code">CPLEX_INCLUDE_DIRECTORY</span> and / or <span class="code">LEMON_LIBRARY</span>, <span class="code">LEMON_INCLUDE_DIRECTORY</span> appropriately, according to where on your system these libraries are installed.
+<li>For using <span class="emph">SparseSinkhorn</span> <span class="code">USE_SINKHORN</span> has to be turned on and <span class="code">EIGEN_LIBRARY</span> has to be set accordingly.
+</ul>
+<h4>Compiling the library</h4>
+From a terminal in the root of the library directory run:
+<p class="code">
+mkdir build<br/>
+cd build<br/>
+cmake ../src/<br/>
+make<br/>
+make install<br/>
+</p>
+<h4>Including/linking the library</h4>
+The headers are summarized in <span class="code">include/</span>. You should always include <span class="code">Common.h</span>. Depending whether you use ShortCut (and which backend solver) or Sinkhorn you need to include the other headers. The corresponding object files that you need to link against are found in <span class="code">bin/</span>.
+<h2 id="SecExamples">Examples</h2>
+Upon successful installation there are some examples in <span class="code">examples/</span>. The corresponding source code can be found in <span class="code">src/Examples/</span>. Depending on which parts of the library were compiled some potential commands to run from <span class="code">examples/</span> are:
+<p class="code">
+./ShortCut_&lt;CPLEX/Lemon&gt; 0<br/>
+./ShortCut_&lt;CPLEX/Lemon&gt; 1<br/>
+./ShortCut_&lt;CPLEX/Lemon&gt; 2<br/>
+./ShortCut_&lt;CPLEX/Lemon&gt; 3<br/>
+<br/>
+./Sinkhorn_Standard 0<br/>
+./Sinkhorn_Standard 1<br/>
+./Sinkhorn_Standard 2<br/>
+./Sinkhorn_Standard 3<br/>
+./Sinkhorn_Standard 4<br/>
+<br/>
+./Sinkhorn_Barycenter 0<br/>
+./Sinkhorn_Barycenter 1<br/>
+./Sinkhorn_Barycenter 2<br/>
+./Sinkhorn_Barycenter 3
+</p>
+		
+<h2 id="SecReferences">References</h2>
+	<p class="reference" id="ReferenceSchmitzer2016a">[Schmitzer 2016a]
+		<span class="author">B. Schmitzer</span>:
+		<span class="title">A Sparse Multi-Scale Algorithm for Dense Optimal Transport</span>,
+		<span class="ref">Journal of Mathematical Imaging and Vision, 56 (2): 238-259 (2016), <a href="http://arxiv.org/abs/1510.05466">http://arxiv.org/abs/1510.05466</a></span>
+		</p>
+	<p class="reference" id="ReferenceSchmitzer2016b">[Schmitzer 2016b]
+		<span class="author">B. Schmitzer</span>:
+		<span class="title">Stabilized Sparse Scaling Algorithms for Entropy Regularized Transport Problems</span>,
+		<span class="ref"><a href="https://arxiv.org/abs/1610.06519">https://arxiv.org/abs/1610.06519</a></span>
+		</p>
+	<p class="reference" id="ReferenceSchrieber2016">[Schrieber et al. 2016]
+		<span class="author">J. Schrieber, D. Schuhmacher and C. Gottschlich</span>:
+		<span class="title">DOTmark - A Benchmark for Discrete Optimal Transport</span>,
+		<span class="ref"><a href="https://arxiv.org/abs/1610.03368">https://arxiv.org/abs/1610.03368</a></span>
+		</p>
+	
+</div>
+</body>
+</html>

@@ -1,0 +1,5 @@
+#include"ShortCutSolver/Interfaces.h"
+#include"ShortCutSolver/MultiScaleSolver.h"
+#include"ShortCutSolver/TShieldGenerator.h"
+#include"ShortCutSolver/TShieldGenerator_Models.h"
+#include"ShortCutSolver/TShortCutSolver.h"
