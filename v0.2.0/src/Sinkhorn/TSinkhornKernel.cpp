@@ -21,6 +21,9 @@ TSinkhornKernelGenerator::TSinkhornKernelGenerator(
 	costProvider=_costProvider;
 	layerBottom=_layerBottom;
 	
+	useSafeMode=false;
+	useFixDuals=false;
+	
 }
 
 
@@ -95,6 +98,7 @@ TKernelMatrix TSinkhornKernelGenerator::generate(double _eps, double _slack, boo
 					offset=data[0].v; // offset value of smallest new entry
 					costProvider->beta[layerBottom][y]+=offset; // adjust corresponding value of beta
 				}
+				
 				
 				// add new entries to list
 				for(uint i=0;i<data.size();i++) {
@@ -350,6 +354,11 @@ void SinkhornAbsorbScaling(
 	int xres=HP->layers[layer]->nCells;
 	for(int x=0;x<xres;x++) {
 		alpha[layer][x]+=eps*log(u[x]);
+//		// DEBUG
+//		if(!std::isfinite(alpha[layer][x])) {
+//			eprintf("NaN at pos %d\t%f\t%f\n",x,alpha[layer][x],u[x]);
+//		}
+//		// END DEBUG
 		u[x]=1.;
 	}
 	// propagate maximal values over hierarchical alpha values

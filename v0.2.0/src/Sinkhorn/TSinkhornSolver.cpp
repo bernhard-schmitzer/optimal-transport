@@ -331,7 +331,7 @@ int TSinkhornSolverStandard::iterate(const int n) {
 		v=muYVec.cwiseQuotient(kernelT*u);
 		u=muXVec.cwiseQuotient(kernel*v);
 	}
-	if(u.hasNaN() || v.hasNaN()) {
+	if( (!u.allFinite()) || (!v.allFinite()) ) {
 		return MSG_NANSCALING;
 	}
 	return 0;

@@ -56,6 +56,9 @@ public:
 	// slack threshold for effective costs
 	double slack;
 	
+	// safety mode settings
+	bool useSafeMode,useFixDuals;
+	
 	TSinkhornKernelGenerator(
 			THierarchicalPartition *_HPX, THierarchicalPartition *_HPY,
 			const double * _muX, const double * _muY,
@@ -65,7 +68,7 @@ public:
 	virtual ~TSinkhornKernelGenerator() {};
 	
 	TKernelMatrix generate(double _eps, double _slack, bool safeMode, bool fixDuals);
-	TKernelMatrix generate(double _eps, double _slack) { return generate(_eps,_slack,false,false); };
+	TKernelMatrix generate(double _eps, double _slack) { return generate(_eps,_slack,useSafeMode,useFixDuals); };
 	void checkCell(int layer, int x, int y);
 	TKernelMatrix refine(const TKernelMatrix &oldKernel, double _eps);
 	
@@ -78,6 +81,11 @@ public:
 		if(useReferenceMeasures) {
 			_value*=muX[x]*muY[y];
 		}
+//		// DEBUG
+//		if(std::isnan(_value)) {
+//			eprintf("NAN value encountered at %d,%d\t%f\n",x,y,value);
+//		}
+//		// END DEBUG
 		entries.push_back(TKernelTriplet(x,y,_value));							
 	}
 	
