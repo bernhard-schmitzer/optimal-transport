@@ -37,7 +37,7 @@ TKernelMatrix TSinkhornKernelGenerator::generate(double _eps, double _slack, boo
 	int yres=HPY->layers[layerBottom]->nCells;
 	
 	// delete all entries (just in case not yet empty)
-	entries.clear();	
+	entries.clear();
 	
 	// check all cells at coarsests layer, which then recursively does hierarchical search
 	int nX=HPX->layers[0]->nCells;

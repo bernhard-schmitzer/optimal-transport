@@ -41,67 +41,77 @@ int main() {
 	posY.depth=2;
 
 	
-	int depth=5;
+	int depth=6;
 	int nNeighbours=5;
 	
 	
 	///////////////////////////////////////////////
 
-	TMultiScaleSetupSphere MultiScaleSetup(&posX,&posY,muXdat.data(),muYdat.data(),depth);
-	MultiScaleSetup.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
-	msg=MultiScaleSetup.Setup();	
+	TMultiScaleSetupSingleSphere MultiScaleSetupX(&posX,muXdat.data(),depth);
+	MultiScaleSetupX.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupX.Setup();	
 	if(msg!=0) {
 		eprintf("%d\n",msg);
 		return msg;
 	}
+
+	TMultiScaleSetupSingleSphere MultiScaleSetupY(&posY,muYdat.data(),depth);
+	MultiScaleSetupY.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupY.Setup();	
+	if(msg!=0) {
+		eprintf("%d\n",msg);
+		return msg;
+	}
+
 	
 	eprintf("hierarchical cardinalities:\n");
-	for(int layer=0;layer<MultiScaleSetup.nLayers;layer++) {
-		eprintf("%d\t%d\n",layer,MultiScaleSetup.HPX->layers[layer]->nCells);
+	for(int layer=0;layer<MultiScaleSetupX.nLayers;layer++) {
+		eprintf("%d\t%d\n",layer,MultiScaleSetupX.HP->layers[layer]->nCells);
 	}
 	
 	
 	// first compute plain Euclidean radii, needed to determine nearest neighbours
-	msg=MultiScaleSetup.TMultiScaleSetupBase::SetupRadii();	
+	msg=MultiScaleSetupX.TMultiScaleSetupSingleBase::SetupRadii();	
 	// compute neighbours for x, based on Euclidean distances
-	MultiScaleSetup.xNeighboursH=THierarchicalNN::getNeighboursH(
-			MultiScaleSetup.posXH, MultiScaleSetup.xRadii,
-			MultiScaleSetup.HPX, nNeighbours);
+	MultiScaleSetupX.neighboursH=THierarchicalNN::getNeighboursH(
+			MultiScaleSetupX.posH, MultiScaleSetupX.radii,
+			MultiScaleSetupX.HP, nNeighbours);
 	// free Euclidean radii data
-	MultiScaleSetup.HPX->signal_free_double(MultiScaleSetup.xRadii, 0, MultiScaleSetup.nLayers-2);
-	MultiScaleSetup.HPY->signal_free_double(MultiScaleSetup.yRadii, 0, MultiScaleSetup.nLayers-2);
+	MultiScaleSetupX.HP->signal_free_double(MultiScaleSetupX.radii, 0, MultiScaleSetupX.nLayers-2);
 	
 	
 	// project points back to sphere
-	MultiScaleSetup.SetupProjectPoints();
+	MultiScaleSetupX.SetupProjectPoints();
+	MultiScaleSetupY.SetupProjectPoints();
 	// compute sphere radii
-	MultiScaleSetup.SetupRadii();
+	MultiScaleSetupX.SetupRadii();
+	MultiScaleSetupY.SetupRadii();
 	
 	
 	
 	TCostFunctionProvider_Reflector costFunctionProvider(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-			MultiScaleSetup.nLayers, MultiScaleSetup.dim
+			MultiScaleSetupX.resH, MultiScaleSetupX.resH,
+			MultiScaleSetupX.posH, MultiScaleSetupX.posH,
+			MultiScaleSetupX.nLayers, MultiScaleSetupX.dim
 			);
 	
 			
 	TShieldGeneratorTree_Reflector shieldGenerator(
-			MultiScaleSetup.dim,
-			MultiScaleSetup.HPY, MultiScaleSetup.posYH, MultiScaleSetup.yRadii,
+			MultiScaleSetupX.dim,
+			MultiScaleSetupY.HP, MultiScaleSetupY.posH, MultiScaleSetupY.radii,
 			0 /* finest layer */, 0 /* coarsest layer */,
-			MultiScaleSetup.xresH, MultiScaleSetup.posXH, MultiScaleSetup.xNeighboursH
+			MultiScaleSetupX.resH, MultiScaleSetupX.posH, MultiScaleSetupX.neighboursH
 			);
 	
 	TShortCutCouplingHandlerInterface couplingHandlerInterface(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.nLayers);
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.nLayers);
 	
 	
 	// CPLEX
 	TShortCutSubSolverInterfaceCPLEX subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	
@@ -112,7 +122,7 @@ int main() {
 			&couplingHandlerInterface,
 			&subSolverInterface,
 			&shieldGenerator,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
 			1, // coarsest layer
 			//TShortCutSolver::VCHECK_PRIMAL // need primal to test basis extraction
 			TShortCutSolver::VCHECK_DUAL

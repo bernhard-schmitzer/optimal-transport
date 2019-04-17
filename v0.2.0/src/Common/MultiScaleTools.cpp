@@ -6,256 +6,256 @@
 
 
 
-TMultiScaleSetupBase::TMultiScaleSetupBase(TDoubleMatrix *_posX, TDoubleMatrix *_posY, double *_muX, double *_muY,
-		int _depth) {
-	posX=_posX;
-	posY=_posY;
-	muX=_muX;
-	muY=_muY;
-	depth=_depth;
-	
-	HBX=NULL;
-	HBY=NULL;
-	
-	alphaH=NULL;
-	betaH=NULL;
-	xRadii=NULL;
-	yRadii=NULL;
+//TMultiScaleSetupBase::TMultiScaleSetupBase(TDoubleMatrix *_posX, TDoubleMatrix *_posY, double *_muX, double *_muY,
+//		int _depth) {
+//	posX=_posX;
+//	posY=_posY;
+//	muX=_muX;
+//	muY=_muY;
+//	depth=_depth;
+//	
+//	HBX=NULL;
+//	HBY=NULL;
+//	
+//	alphaH=NULL;
+//	betaH=NULL;
+//	xRadii=NULL;
+//	yRadii=NULL;
 
-	xNeighboursH=NULL;
+//	xNeighboursH=NULL;
 
-	HierarchyBuilderChildMode=THierarchyBuilder::CM_Grid;
+//	HierarchyBuilderChildMode=THierarchyBuilder::CM_Grid;
 
-}
+//}
 
-TMultiScaleSetupBase::~TMultiScaleSetupBase() {
-	// free dual variables if allocated
-	if(alphaH!=NULL) {
-		HPX->signal_free_double(alphaH, 0, HPX->nLayers-1);
-	}
-	if(betaH!=NULL) {
-		HPY->signal_free_double(betaH, 0, HPY->nLayers-1);
-	}
+//TMultiScaleSetupBase::~TMultiScaleSetupBase() {
+//	// free dual variables if allocated
+//	if(alphaH!=NULL) {
+//		HPX->signal_free_double(alphaH, 0, HPX->nLayers-1);
+//	}
+//	if(betaH!=NULL) {
+//		HPY->signal_free_double(betaH, 0, HPY->nLayers-1);
+//	}
 
-	// free radii if allocated
-	if(xRadii!=NULL) {
-		HPX->signal_free_double(xRadii, 0, HPX->nLayers-2);
-	}
-	if(yRadii!=NULL) {
-		HPY->signal_free_double(yRadii, 0, HPY->nLayers-2);
-	}
+//	// free radii if allocated
+//	if(xRadii!=NULL) {
+//		HPX->signal_free_double(xRadii, 0, HPX->nLayers-2);
+//	}
+//	if(yRadii!=NULL) {
+//		HPY->signal_free_double(yRadii, 0, HPY->nLayers-2);
+//	}
 
-	// free neighbours if assigned
-	if(xNeighboursH!=NULL) {
-		for(int i=0;i<nLayers;i++) {
-			delete xNeighboursH[i];
-		}
-		free(xNeighboursH);
-	}
-
-
-	// free hiearchical partitions
-
-	if(HBX!=NULL) {
-
-		free(xresH);		
-		HBX->freeSignal(muXH,HBX->layers.size());
-		HBX->freeSignal(posXH,HBX->layers.size());
-		delete HPX;
-		delete HBX;
-	}
-	if(HBY!=NULL) {
-
-		free(yresH);		
-		HBY->freeSignal(muYH,HBY->layers.size());
-		HBY->freeSignal(posYH,HBY->layers.size());
-		delete HPY;
-		delete HBY;
-	
-		
-	}	
-	
-
-}
-
-int TMultiScaleSetupBase::BasicSetup() {
-	if((posX->depth!=2) || (posY->depth!=2)) {
-		eprintf("ERROR: marginal point clouds must be 2d arrays.\n");
-		return ERR_PREP_INIT_POINTCLOUD2D;
-	}
-	if(posX->dimensions[1]!=posY->dimensions[1]) {
-		return ERR_PREP_INIT_DIMMISMATCH;
-	}
-	xres=posX->dimensions[0];
-	yres=posY->dimensions[0];
-	dim=posX->dimensions[1];
-	return 0;
-}
-
-int TMultiScaleSetupBase::BasicMeasureChecks() {
-
-	// sanity check: muX and muY must be strictly positive
-	if(doubleArrayMin(muX,xres)<=0.) {
-		eprintf("ERROR: minimum of muX is not strictly positive.\n");
-		return ERR_PREP_INIT_MUXNEG;
-	}
-	if(doubleArrayMin(muY,yres)<=0.) {
-		eprintf("ERROR: minimum of muY is not strictly positive.\n");
-		return ERR_PREP_INIT_MUYNEG;
-	}
-
-	// TODO: more sanity checks?
-
-	return 0;
-}
+//	// free neighbours if assigned
+//	if(xNeighboursH!=NULL) {
+//		for(int i=0;i<nLayers;i++) {
+//			delete xNeighboursH[i];
+//		}
+//		free(xNeighboursH);
+//	}
 
 
-int TMultiScaleSetupBase::SetupHierarchicalPartition(double *mu, double *pos, int res, int dim, int depth,
-		THierarchyBuilder **_HB, THierarchicalPartition **_HP, double ***_posH, double ***_muH, int **_resH) {
-	
-	// create hierarchical partition
-	THierarchyBuilder *HB = new THierarchyBuilder(pos,res,dim, HierarchyBuilderChildMode, depth);
-		
-	// convert to format used by hierarchical solver
-	THierarchicalPartition *HP=HB->convert();
-	
-	// hierarchical positions
-	// position of nodes in coarser hierarchy levels
-	double **posH=HB->allocateDoubleSignal(dim);
-	HB->getSignalPos(posH);
-	
-	// hierarchical masses
-	// combined masses of nodes in coarser hierarchy levels
-	double **muH=HB->allocateDoubleSignal(1);
-	HP->computeHierarchicalMasses(mu,muH);
+//	// free hiearchical partitions
 
-	// get hierarchical cardinalities of each marginal on each level
-	int *resH=HB->getResH();
+//	if(HBX!=NULL) {
 
-	*_HB=HB;
-	*_HP=HP;
-	*_posH=posH;
-	*_muH=muH;
-	*_resH=resH;
-	
-	return 0;
-	
-}
+//		free(xresH);		
+//		HBX->freeSignal(muXH,HBX->layers.size());
+//		HBX->freeSignal(posXH,HBX->layers.size());
+//		delete HPX;
+//		delete HBX;
+//	}
+//	if(HBY!=NULL) {
 
-int TMultiScaleSetupBase::SetupHierarchicalPartitions() {
-	int msg;
-	msg=SetupHierarchicalPartition(muX, posX->data, xres, dim, depth,
-			&HBX, &HPX, &posXH, &muXH, &xresH);
-	if(msg!=0) {
-		return msg;
-	}
-	
-	msg=SetupHierarchicalPartition(muY, posY->data, yres, dim, depth,
-			&HBY, &HPY, &posYH, &muYH, &yresH);
-	if(msg!=0) {
-		return msg;
-	}
-			
-	nLayers=HPX->nLayers;
+//		free(yresH);		
+//		HBY->freeSignal(muYH,HBY->layers.size());
+//		HBY->freeSignal(posYH,HBY->layers.size());
+//		delete HPY;
+//		delete HBY;
+//	
+//		
+//	}	
+//	
 
-	return 0;
-}
+//}
 
-int TMultiScaleSetupBase::Setup() {
-	int msg;
+//int TMultiScaleSetupBase::BasicSetup() {
+//	if((posX->depth!=2) || (posY->depth!=2)) {
+//		eprintf("ERROR: marginal point clouds must be 2d arrays.\n");
+//		return ERR_PREP_INIT_POINTCLOUD2D;
+//	}
+//	if(posX->dimensions[1]!=posY->dimensions[1]) {
+//		return ERR_PREP_INIT_DIMMISMATCH;
+//	}
+//	xres=posX->dimensions[0];
+//	yres=posY->dimensions[0];
+//	dim=posX->dimensions[1];
+//	return 0;
+//}
 
-	msg=BasicSetup();
-	if(msg!=0) { return msg; }
-	msg=BasicMeasureChecks();
-	if(msg!=0) { return msg; }
-	msg=SetupHierarchicalPartitions();
-	if(msg!=0) { return msg; }	
+//int TMultiScaleSetupBase::BasicMeasureChecks() {
 
-	// only invoke these on demand
-//	msg=SetupDuals();
-//	if(msg!=0) { return msg; }	
-//	msg=SetupRadii();
+//	// sanity check: muX and muY must be strictly positive
+//	if(doubleArrayMin(muX,xres)<=0.) {
+//		eprintf("ERROR: minimum of muX is not strictly positive.\n");
+//		return ERR_PREP_INIT_MUXNEG;
+//	}
+//	if(doubleArrayMin(muY,yres)<=0.) {
+//		eprintf("ERROR: minimum of muY is not strictly positive.\n");
+//		return ERR_PREP_INIT_MUYNEG;
+//	}
+
+//	// TODO: more sanity checks?
+
+//	return 0;
+//}
+
+
+//int TMultiScaleSetupBase::SetupHierarchicalPartition(double *mu, double *pos, int res, int dim, int depth,
+//		THierarchyBuilder **_HB, THierarchicalPartition **_HP, double ***_posH, double ***_muH, int **_resH) {
+//	
+//	// create hierarchical partition
+//	THierarchyBuilder *HB = new THierarchyBuilder(pos,res,dim, HierarchyBuilderChildMode, depth);
+//		
+//	// convert to format used by hierarchical solver
+//	THierarchicalPartition *HP=HB->convert();
+//	
+//	// hierarchical positions
+//	// position of nodes in coarser hierarchy levels
+//	double **posH=HB->allocateDoubleSignal(dim);
+//	HB->getSignalPos(posH);
+//	
+//	// hierarchical masses
+//	// combined masses of nodes in coarser hierarchy levels
+//	double **muH=HB->allocateDoubleSignal(1);
+//	HP->computeHierarchicalMasses(mu,muH);
+
+//	// get hierarchical cardinalities of each marginal on each level
+//	int *resH=HB->getResH();
+
+//	*_HB=HB;
+//	*_HP=HP;
+//	*_posH=posH;
+//	*_muH=muH;
+//	*_resH=resH;
+//	
+//	return 0;
+//	
+//}
+
+//int TMultiScaleSetupBase::SetupHierarchicalPartitions() {
+//	int msg;
+//	msg=SetupHierarchicalPartition(muX, posX->data, xres, dim, depth,
+//			&HBX, &HPX, &posXH, &muXH, &xresH);
+//	if(msg!=0) {
+//		return msg;
+//	}
+//	
+//	msg=SetupHierarchicalPartition(muY, posY->data, yres, dim, depth,
+//			&HBY, &HPY, &posYH, &muYH, &yresH);
+//	if(msg!=0) {
+//		return msg;
+//	}
+//			
+//	nLayers=HPX->nLayers;
+
+//	return 0;
+//}
+
+//int TMultiScaleSetupBase::Setup() {
+//	int msg;
+
+//	msg=BasicSetup();
+//	if(msg!=0) { return msg; }
+//	msg=BasicMeasureChecks();
+//	if(msg!=0) { return msg; }
+//	msg=SetupHierarchicalPartitions();
 //	if(msg!=0) { return msg; }	
 
-
-	return 0;
-
-}
-
-
-int TMultiScaleSetupBase::SetupDuals() {
-	alphaH=HPX->signal_allocate_double(0,HPX->nLayers-1);
-	betaH=HPY->signal_allocate_double(0,HPY->nLayers-1);
-	return 0;
-}
-
-int TMultiScaleSetupBase::SetupRadii() {
-	xRadii=HBX->getSignalRadii();	
-	yRadii=HBY->getSignalRadii();
-	return 0;
-}
+//	// only invoke these on demand
+////	msg=SetupDuals();
+////	if(msg!=0) { return msg; }	
+////	msg=SetupRadii();
+////	if(msg!=0) { return msg; }	
 
 
-//////////////////////////////////////////
-// Cartesian Grid
-//////////////////////////////////////////
+//	return 0;
 
-TMultiScaleSetupGrid::TMultiScaleSetupGrid(TDoubleMatrix *_muXGrid, TDoubleMatrix *_muYGrid, int _depth) :
-	TMultiScaleSetupBase(NULL, NULL, _muXGrid->data, _muYGrid->data, _depth) {
-	muXGrid=_muXGrid;
-	muYGrid=_muYGrid;
-	posX=GridToolsGetGridMatrix(muXGrid->depth,muXGrid->dimensions);
-	posY=GridToolsGetGridMatrix(muYGrid->depth,muYGrid->dimensions);
-	xDimH=NULL;
-	yDimH=NULL;
-		
-}
-
-int TMultiScaleSetupGrid::SetupHierarchicalPartitions() {
-	int msg;
-	
-	msg=TMultiScaleSetupBase::SetupHierarchicalPartitions(); // call original method
-	if(msg!=0) {
-		return msg;
-	}
-	
-	// initialize xDimH and yDimH
-	xDimH=HBX->getDimH(muXGrid->dimensions);
-	yDimH=HBY->getDimH(muYGrid->dimensions);
-	return 0;
-}
-
-int TMultiScaleSetupGrid::SetupGridNeighboursX() {
-	if(xNeighboursH!=NULL) {
-		for(int i=0;i<nLayers;i++) {
-			delete xNeighboursH[i];
-		}
-		free(xNeighboursH);
-	}
-
-	xNeighboursH=(TVarListHandler**) malloc(sizeof(TVarListHandler*)*nLayers);
-	for(int i=0;i<nLayers;i++) {
-		xNeighboursH[i]=new TVarListHandler();
-		xNeighboursH[i]->setupEmpty(xresH[i]);
-		GridToolsGetNeighbours(dim, xDimH+i*dim, xNeighboursH[i]);
-	}
-	
-	return 0;
-}
+//}
 
 
-TMultiScaleSetupGrid::~TMultiScaleSetupGrid() {
-	freeTDoubleMatrix(posX);
-	freeTDoubleMatrix(posY);
-	
-	if(xDimH!=NULL) {
-		free(xDimH);
-	}
-	if(yDimH!=NULL) {
-		free(yDimH);
-	}
-	
-}
+//int TMultiScaleSetupBase::SetupDuals() {
+//	alphaH=HPX->signal_allocate_double(0,HPX->nLayers-1);
+//	betaH=HPY->signal_allocate_double(0,HPY->nLayers-1);
+//	return 0;
+//}
+
+//int TMultiScaleSetupBase::SetupRadii() {
+//	xRadii=HBX->getSignalRadii();	
+//	yRadii=HBY->getSignalRadii();
+//	return 0;
+//}
+
+
+////////////////////////////////////////////
+//// Cartesian Grid
+////////////////////////////////////////////
+
+//TMultiScaleSetupGrid::TMultiScaleSetupGrid(TDoubleMatrix *_muXGrid, TDoubleMatrix *_muYGrid, int _depth) :
+//	TMultiScaleSetupBase(NULL, NULL, _muXGrid->data, _muYGrid->data, _depth) {
+//	muXGrid=_muXGrid;
+//	muYGrid=_muYGrid;
+//	posX=GridToolsGetGridMatrix(muXGrid->depth,muXGrid->dimensions);
+//	posY=GridToolsGetGridMatrix(muYGrid->depth,muYGrid->dimensions);
+//	xDimH=NULL;
+//	yDimH=NULL;
+//		
+//}
+
+//int TMultiScaleSetupGrid::SetupHierarchicalPartitions() {
+//	int msg;
+//	
+//	msg=TMultiScaleSetupBase::SetupHierarchicalPartitions(); // call original method
+//	if(msg!=0) {
+//		return msg;
+//	}
+//	
+//	// initialize xDimH and yDimH
+//	xDimH=HBX->getDimH(muXGrid->dimensions);
+//	yDimH=HBY->getDimH(muYGrid->dimensions);
+//	return 0;
+//}
+
+//int TMultiScaleSetupGrid::SetupGridNeighboursX() {
+//	if(xNeighboursH!=NULL) {
+//		for(int i=0;i<nLayers;i++) {
+//			delete xNeighboursH[i];
+//		}
+//		free(xNeighboursH);
+//	}
+
+//	xNeighboursH=(TVarListHandler**) malloc(sizeof(TVarListHandler*)*nLayers);
+//	for(int i=0;i<nLayers;i++) {
+//		xNeighboursH[i]=new TVarListHandler();
+//		xNeighboursH[i]->setupEmpty(xresH[i]);
+//		GridToolsGetNeighbours(dim, xDimH+i*dim, xNeighboursH[i]);
+//	}
+//	
+//	return 0;
+//}
+
+
+//TMultiScaleSetupGrid::~TMultiScaleSetupGrid() {
+//	freeTDoubleMatrix(posX);
+//	freeTDoubleMatrix(posY);
+//	
+//	if(xDimH!=NULL) {
+//		free(xDimH);
+//	}
+//	if(yDimH!=NULL) {
+//		free(yDimH);
+//	}
+//	
+//}
 
 
 //////////////////////////////////////////
@@ -692,7 +692,293 @@ void THierarchicalDualMaximizer::getMaxDual(THierarchicalPartition *partitionX, 
 
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TMULTISCALESETUPBASE SINGLE MARGINAL
 
+TMultiScaleSetupSingleBase::TMultiScaleSetupSingleBase(TDoubleMatrix *_pos, double *_mu, int _depth) {
+	pos=_pos;
+	mu=_mu;
+	depth=_depth;
+	
+	HB=NULL;
+	
+	alphaH=NULL;
+	radii=NULL;
+
+	neighboursH=NULL;
+
+	HierarchyBuilderChildMode=THierarchyBuilder::CM_Grid;
+
+}
+
+TMultiScaleSetupSingleBase::~TMultiScaleSetupSingleBase() {
+	// free dual variables if allocated
+	if(alphaH!=NULL) {
+		HP->signal_free_double(alphaH, 0, HP->nLayers-1);
+	}
+
+	// free radii if allocated
+	if(radii!=NULL) {
+		HP->signal_free_double(radii, 0, HP->nLayers-2);
+	}
+
+	// free neighbours if assigned
+	if(neighboursH!=NULL) {
+		for(int i=0;i<nLayers;i++) {
+			delete neighboursH[i];
+		}
+		free(neighboursH);
+	}
+
+
+	// free hiearchical partitions
+
+	if(HB!=NULL) {
+
+		free(resH);		
+		HB->freeSignal(muH,HB->layers.size());
+		HB->freeSignal(posH,HB->layers.size());
+		delete HP;
+		delete HB;
+	}
+
+}
+
+int TMultiScaleSetupSingleBase::BasicSetup() {
+	if(pos->depth!=2) {
+		eprintf("ERROR: marginal point clouds must be 2d arrays.\n");
+		return ERR_PREP_INIT_POINTCLOUD2D;
+	}
+	res=pos->dimensions[0];
+	dim=pos->dimensions[1];
+	return 0;
+}
+
+int TMultiScaleSetupSingleBase::BasicMeasureChecks() {
+
+	// sanity check: mu must be strictly positive
+	if(doubleArrayMin(mu,res)<=0.) {
+		eprintf("ERROR: minimum of mu is not strictly positive.\n");
+		return ERR_PREP_INIT_MUXNEG;
+	}
+
+	// TODO: more sanity checks?
+
+	return 0;
+}
+
+
+int TMultiScaleSetupSingleBase::SetupHierarchicalPartition() {
+	
+	// create hierarchical partition
+	HB = new THierarchyBuilder(pos->data,res,dim, HierarchyBuilderChildMode, depth);
+		
+	// convert to format used by hierarchical solver
+	HP=HB->convert();
+	
+	// hierarchical positions
+	// position of nodes in coarser hierarchy levels
+	posH=HB->allocateDoubleSignal(dim);
+	HB->getSignalPos(posH);
+	
+	// hierarchical masses
+	// combined masses of nodes in coarser hierarchy levels
+	muH=HB->allocateDoubleSignal(1);
+	HP->computeHierarchicalMasses(mu,muH);
+
+	// get hierarchical cardinalities of each marginal on each level
+	resH=HB->getResH();
+
+	nLayers=HP->nLayers;
+	
+	return 0;
+	
+}
+
+int TMultiScaleSetupSingleBase::Setup() {
+	int msg;
+
+	msg=BasicSetup();
+	if(msg!=0) { return msg; }
+	msg=BasicMeasureChecks();
+	if(msg!=0) { return msg; }
+	msg=SetupHierarchicalPartition();
+	if(msg!=0) { return msg; }	
+
+	// only invoke these on demand
+//	msg=SetupDuals();
+//	if(msg!=0) { return msg; }	
+//	msg=SetupRadii();
+//	if(msg!=0) { return msg; }	
+
+
+	return 0;
+
+}
+
+
+int TMultiScaleSetupSingleBase::SetupDuals() {
+	alphaH=HP->signal_allocate_double(0,HP->nLayers-1);
+	return 0;
+}
+
+int TMultiScaleSetupSingleBase::SetupRadii() {
+	radii=HB->getSignalRadii();	
+	return 0;
+}
+
+
+//////////////////////////////////////////
+// Cartesian Grid
+//////////////////////////////////////////
+
+TMultiScaleSetupSingleGrid::TMultiScaleSetupSingleGrid(TDoubleMatrix *_muGrid, int _depth) :
+	TMultiScaleSetupSingleBase(NULL, _muGrid->data, _depth) {
+	muGrid=_muGrid;
+	pos=GridToolsGetGridMatrix(muGrid->depth,muGrid->dimensions);
+	dimH=NULL;
+		
+}
+
+int TMultiScaleSetupSingleGrid::SetupHierarchicalPartition() {
+	int msg;
+	
+	msg=TMultiScaleSetupSingleBase::SetupHierarchicalPartition(); // call original method
+	if(msg!=0) {
+		return msg;
+	}
+	
+	// initialize dimH
+	dimH=HB->getDimH(muGrid->dimensions);
+	return 0;
+}
+
+int TMultiScaleSetupSingleGrid::SetupGridNeighbours() {
+	if(neighboursH!=NULL) {
+		for(int i=0;i<nLayers;i++) {
+			delete neighboursH[i];
+		}
+		free(neighboursH);
+	}
+
+	neighboursH=(TVarListHandler**) malloc(sizeof(TVarListHandler*)*nLayers);
+	for(int i=0;i<nLayers;i++) {
+		neighboursH[i]=new TVarListHandler();
+		neighboursH[i]->setupEmpty(resH[i]);
+		GridToolsGetNeighbours(dim, dimH+i*dim, neighboursH[i]);
+	}
+	
+	return 0;
+}
+
+
+TMultiScaleSetupSingleGrid::~TMultiScaleSetupSingleGrid() {
+	freeTDoubleMatrix(pos);
+	
+	if(dimH!=NULL) {
+		free(dimH);
+	}
+	
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+TMultiScaleSetupBarycenterContainer::TMultiScaleSetupBarycenterContainer() {
+	nMarginals=0;
+	HP=NULL;
+	HPZ=NULL;
+	muH=NULL;
+	muZH=NULL;
+	alphaH=NULL;
+	betaH=NULL;
+	costProvider=NULL;
+	weights=NULL;
+	resH=NULL;
+	resZH=NULL;
+}
+
+TMultiScaleSetupBarycenterContainer::TMultiScaleSetupBarycenterContainer(const int _nMarginals)
+	: TMultiScaleSetupBarycenterContainer() {
+	setupEmpty(_nMarginals);
+}
+
+TMultiScaleSetupBarycenterContainer::~TMultiScaleSetupBarycenterContainer() {
+	cleanup();
+}
+
+void TMultiScaleSetupBarycenterContainer::setupEmpty(const int _nMarginals) {
+	cleanup();
+	nMarginals=_nMarginals;
+	HP=(THierarchicalPartition**) malloc(sizeof(THierarchicalPartition*)*nMarginals);
+	muH=(double***) malloc(sizeof(double**)*nMarginals);
+	alphaH=(double***) malloc(sizeof(double**)*nMarginals);
+	betaH=(double***) malloc(sizeof(double**)*nMarginals);
+	for(int i=0;i<nMarginals;i++) {
+		betaH[i]=NULL;
+	}
+	costProvider=(THierarchicalCostFunctionProvider**) malloc(sizeof(THierarchicalCostFunctionProvider*)*nMarginals);
+	weights=(double*) malloc(sizeof(double)*nMarginals);
+	resH=(int**) malloc(sizeof(int*)*nMarginals);
+
+}
+
+void TMultiScaleSetupBarycenterContainer::cleanup() {
+	if(HP!=NULL) {
+		free(HP);
+	}
+	if(muH!=NULL) {
+		free(muH);
+	}
+	if(alphaH!=NULL) {
+		free(alphaH);
+	}
+	if(betaH!=NULL) {
+		for(int i=0;i<nMarginals;i++) {
+			if(betaH[i]!=NULL) {
+				HPZ->signal_free_double(betaH[i], 0, HPZ->nLayers-1);
+			}
+		}
+		free(betaH);
+	}
+	if(costProvider!=NULL) {
+		free(costProvider);
+	}
+	if(weights!=NULL) {
+		free(weights);
+	}
+	if(resH!=NULL) {
+		free(resH);
+	}
+}
+
+void TMultiScaleSetupBarycenterContainer::setMarginal(const int n, TMultiScaleSetupSingleBase &multiScaleSetup,
+		const double weight) {
+	HP[n]=multiScaleSetup.HP;
+	muH[n]=multiScaleSetup.muH;
+	alphaH[n]=multiScaleSetup.alphaH;
+	weights[n]=weight;
+	resH[n]=multiScaleSetup.resH;
+}
+
+void TMultiScaleSetupBarycenterContainer::setCostFunctionProvider(
+		int n, THierarchicalCostFunctionProvider &costFunctionProvider) {
+	costProvider[n]=&costFunctionProvider;
+	costProvider[n]->alpha=alphaH[n];
+	costProvider[n]->beta=betaH[n];
+}
+
+void TMultiScaleSetupBarycenterContainer::setCenterMarginal(TMultiScaleSetupSingleBase &multiScaleSetup) {
+	HPZ=multiScaleSetup.HP;
+	muZH=multiScaleSetup.muH;
+	for(int i=0;i<nMarginals;i++) {
+		betaH[i]=HPZ->signal_allocate_double(0,HPZ->nLayers-1);
+	}
+	resZH=multiScaleSetup.resH;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 template class THierarchicalSearchList<THierarchicalNN::TCandidate>;
 

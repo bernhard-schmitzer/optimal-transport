@@ -61,6 +61,11 @@ THierarchicalCostFunctionProvider_SquaredEuclidean::THierarchicalCostFunctionPro
 	
 }
 
+void THierarchicalCostFunctionProvider_SquaredEuclidean::setWFlenscale(const double _WFlenscale) {
+	WFlenscale=_WFlenscale;
+	WFprefactor=4*WFlenscale*WFlenscale;
+}
+
 
 double THierarchicalCostFunctionProvider_SquaredEuclidean::getCostAsym(int layerX, int x, int layerY, int y) {
 	double result;

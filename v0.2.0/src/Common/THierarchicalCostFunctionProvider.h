@@ -100,6 +100,7 @@ public:
 			false,
 			0) {};
 
+	void setWFlenscale(const double _WFlenscale);
 	double getCostAsym(int layerX, int x, int layerY, int y);
 };
 

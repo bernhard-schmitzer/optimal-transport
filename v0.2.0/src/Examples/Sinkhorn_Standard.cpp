@@ -65,32 +65,42 @@ int W2Grid() {
 	
 	
 	// fundamental parameters
-	int depth=2; // hierarchy depth
-	int layerFinest=depth+1; // what is the finest layer we want to solve?
+	int depth=3; // hierarchy depth
+	int layerFinest=depth; // what is the finest layer we want to solve?
 	int layerCoarsest=1; // coarsest layer to solve on. sometimes skip a few layers at the top
 
 	int msg; // store return codes from functions
 
 	///////////////////////////////////////////////
 	// problem setup
-	TMultiScaleSetupGrid MultiScaleSetup(&muX,&muY,depth);
-	msg=MultiScaleSetup.Setup();
+	TMultiScaleSetupSingleGrid MultiScaleSetupX(&muX,depth);
+	msg=MultiScaleSetupX.Setup();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupRadii();
+	msg=MultiScaleSetupX.SetupRadii();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupDuals();
+	msg=MultiScaleSetupX.SetupDuals();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+
+
+
+	TMultiScaleSetupSingleGrid MultiScaleSetupY(&muY,depth);
+	msg=MultiScaleSetupY.Setup();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	msg=MultiScaleSetupY.SetupRadii();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	msg=MultiScaleSetupY.SetupDuals();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+
 	
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// setup a cost function provider
 	THierarchicalCostFunctionProvider_SquaredEuclidean costProvider(
-		MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-		MultiScaleSetup.xRadii, MultiScaleSetup.yRadii,
+		MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+		MultiScaleSetupX.radii, MultiScaleSetupY.radii,
 		muX.depth, layerFinest,
 		true,
-		MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+		MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 		1.);
-
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// epsScaling
@@ -99,7 +109,7 @@ int W2Grid() {
 	int epsSteps=10;
 	
 	TEpsScalingHandler epsScalingHandler(epsStart,epsTarget,epsSteps); // basic eps scaling
-	epsScalingHandler.getEpsScalesFromBox(muXdim[0],2,MultiScaleSetup.nLayers); // eps scales for each layer
+	epsScalingHandler.getEpsScalesFromBox(muXdim[0],2,MultiScaleSetupX.nLayers); // eps scales for each layer
 	msg=epsScalingHandler.getEpsScalingSplit(layerCoarsest,1); // create sub eps lists for each layer
 		// according to scales in line above
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
@@ -119,13 +129,13 @@ int W2Grid() {
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// create solver object
 	TSinkhornSolverStandard SinkhornSolver(
-			MultiScaleSetup.nLayers,
+			MultiScaleSetupX.nLayers,
 			epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
 			layerCoarsest, layerFinest,
 			cfg,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
-			MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
+			MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 			&costProvider
 			);
 	
@@ -194,32 +204,38 @@ int Interpolation() {
 
 	// fundamental parameters
 	int depth=0; // hierarchy depth
-		// (not really needed here: just one trivial top-layer with one node and then the full data below)
-	int layerFinest=depth+1; // what is the finest layer we want to solve?
-	int layerCoarsest=1; // coarsest layer to solve on. sometimes skip a few layers at the top
+		// (not really needed here: just one trivial layer with full data)
+	int layerFinest=depth; // what is the finest layer we want to solve?
+	int layerCoarsest=0; // coarsest layer to solve on. sometimes skip a few layers at the top
 	int dim=posX.dimensions[1]; // spatial dimension
 
 	int msg; // store return codes from functions
 
+
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// basic hierarchical setup
-	TMultiScaleSetupBase MultiScaleSetup(&posX,&posY,muXdat,muYdat,depth);
-	msg=MultiScaleSetup.Setup();
+	TMultiScaleSetupSingleBase MultiScaleSetupX(&posX,muXdat,depth);
+	msg=MultiScaleSetupX.Setup();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupRadii();
+	msg=MultiScaleSetupX.SetupDuals();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupDuals();
+
+
+	TMultiScaleSetupSingleBase MultiScaleSetupY(&posY,muYdat,depth);
+	msg=MultiScaleSetupY.Setup();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	msg=MultiScaleSetupY.SetupDuals();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
 
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// setup a cost function provider
 	THierarchicalCostFunctionProvider_SquaredEuclidean costProvider(
-		MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-		MultiScaleSetup.xRadii, MultiScaleSetup.yRadii,
+		MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+		MultiScaleSetupX.radii, MultiScaleSetupY.radii,
 		dim, layerFinest,
 		true,
-		MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+		MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 		1.);
 
 
@@ -246,13 +262,13 @@ int Interpolation() {
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// create solver object
-	TSinkhornSolverStandard SinkhornSolver(MultiScaleSetup.nLayers,
+	TSinkhornSolverStandard SinkhornSolver(MultiScaleSetupX.nLayers,
 			epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
 			layerCoarsest, layerFinest,
 			cfg,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
-			MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
+			MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 			&costProvider
 			);
 	
@@ -354,9 +370,9 @@ int WpSphere() {
 	// fundamental parameters
 	int dim=3;
 	int res=muXdat.size();
-	int depth=4;
+	int depth=5;
 	int layerCoarsest=2;
-	int layerFinest=depth+1;
+	int layerFinest=depth;
 	double p=2;
 
 	///////////////////////////////////////////////
@@ -373,32 +389,46 @@ int WpSphere() {
 	
 	///////////////////////////////////////////////
 
-	TMultiScaleSetupSphere MultiScaleSetup(&posX,&posX,muXdat.data(),muYdat.data(),depth);
-	MultiScaleSetup.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
-	msg=MultiScaleSetup.Setup();	
+	TMultiScaleSetupSingleSphere MultiScaleSetupX(&posX,muXdat.data(),depth);
+	MultiScaleSetupX.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupX.Setup();	
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }	
 	// project points back to sphere
-	MultiScaleSetup.SetupProjectPoints();
+	MultiScaleSetupX.SetupProjectPoints();
 	// compute sphere radii
-	msg=MultiScaleSetup.SetupRadii();
+	msg=MultiScaleSetupX.SetupRadii();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
 	// allocate hierarchical dual variables
-	msg=MultiScaleSetup.SetupDuals();
+	msg=MultiScaleSetupX.SetupDuals();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
 
+	TMultiScaleSetupSingleSphere MultiScaleSetupY(&posX,muYdat.data(),depth);
+	MultiScaleSetupY.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupY.Setup();	
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }	
+	// project points back to sphere
+	MultiScaleSetupY.SetupProjectPoints();
+	// compute sphere radii
+	msg=MultiScaleSetupY.SetupRadii();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	// allocate hierarchical dual variables
+	msg=MultiScaleSetupY.SetupDuals();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+
+
 	printf("hierarchical cardinalities:\n");
-	for(int layer=0;layer<MultiScaleSetup.nLayers;layer++) {
-		printf("%d\t%d\n",layer,MultiScaleSetup.HPX->layers[layer]->nCells);
+	for(int layer=0;layer<MultiScaleSetupX.nLayers;layer++) {
+		printf("%d\t%d\n",layer,MultiScaleSetupX.HP->layers[layer]->nCells);
 	}
 	
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// setup a cost function provider
 	THierarchicalCostFunctionProvider_Sphere costProvider(
-		MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-		MultiScaleSetup.xRadii, MultiScaleSetup.yRadii,
+		MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+		MultiScaleSetupX.radii, MultiScaleSetupY.radii,
 		dim, 0,
 		true,
-		MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+		MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 		p);
 	
 	
@@ -410,7 +440,7 @@ int WpSphere() {
 	double epsBoxScale=.7;
 	
 	TEpsScalingHandler epsScalingHandler(epsStart,epsTarget,epsSteps); // basic eps scaling
-	epsScalingHandler.getEpsScalesFromBox(epsBoxScale,p,MultiScaleSetup.nLayers); // eps scales for each layer
+	epsScalingHandler.getEpsScalesFromBox(epsBoxScale,p,MultiScaleSetupX.nLayers); // eps scales for each layer
 	msg=epsScalingHandler.getEpsScalingSplit(layerCoarsest,1); // create sub eps lists
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
 
@@ -430,12 +460,12 @@ int WpSphere() {
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// create solver object
-	TSinkhornSolverStandard SinkhornSolver(MultiScaleSetup.nLayers, epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
+	TSinkhornSolverStandard SinkhornSolver(MultiScaleSetupX.nLayers, epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
 			layerCoarsest, layerFinest,
 			cfg,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
-			MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
+			MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 			&costProvider
 			);
 	
@@ -482,8 +512,8 @@ int WFR() {
 	
 	
 	// fundamental parameters
-	int depth=2; // hierarchy depth
-	int layerFinest=depth+1; // what is the finest layer we want to solve?
+	int depth=3; // hierarchy depth
+	int layerFinest=depth; // what is the finest layer we want to solve?
 	int layerCoarsest=1; // coarsest layer to solve on. sometimes skip a few layers at the top
 	int dim=2;
 
@@ -496,22 +526,30 @@ int WFR() {
 
 	///////////////////////////////////////////////
 	// problem setup
-	TMultiScaleSetupGrid MultiScaleSetup(&muX,&muY,depth);
-	msg=MultiScaleSetup.Setup();
+	TMultiScaleSetupSingleGrid MultiScaleSetupX(&muX,depth);
+	msg=MultiScaleSetupX.Setup();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupRadii();
+	msg=MultiScaleSetupX.SetupRadii();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupDuals();
+	msg=MultiScaleSetupX.SetupDuals();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+
+	TMultiScaleSetupSingleGrid MultiScaleSetupY(&muY,depth);
+	msg=MultiScaleSetupY.Setup();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	msg=MultiScaleSetupY.SetupRadii();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	msg=MultiScaleSetupY.SetupDuals();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
 	
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// setup a cost function provider
 	THierarchicalCostFunctionProvider_SquaredEuclidean costProvider(
-		MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-		MultiScaleSetup.xRadii, MultiScaleSetup.yRadii,
+		MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+		MultiScaleSetupX.radii, MultiScaleSetupY.radii,
 		dim, layerFinest,
 		true,
-		MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+		MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 		1.,
 		true, WFRlenScale);
 
@@ -523,7 +561,7 @@ int WFR() {
 	int epsSteps=10;
 	
 	TEpsScalingHandler epsScalingHandler(epsStart,epsTarget,epsSteps); // basic eps scaling
-	epsScalingHandler.getEpsScalesFromBox(muXdim[0],2,MultiScaleSetup.nLayers); // eps scales for each layer
+	epsScalingHandler.getEpsScalesFromBox(muXdim[0],2,MultiScaleSetupX.nLayers); // eps scales for each layer
 	msg=epsScalingHandler.getEpsScalingSplit(layerCoarsest,1); // create sub eps lists for each layer
 		// according to scales in line above
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
@@ -542,13 +580,13 @@ int WFR() {
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// create solver object
-	TSinkhornSolverKLMarginals SinkhornSolver(MultiScaleSetup.nLayers,
+	TSinkhornSolverKLMarginals SinkhornSolver(MultiScaleSetupX.nLayers,
 			epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
 			layerCoarsest, layerFinest,
 			cfg,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
-			MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
+			MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 			&costProvider,
 			WFRKLweight
 			);
@@ -601,30 +639,39 @@ int W2Grid_256x256() {
 	
 	
 	// fundamental parameters
-	int depth=7; // hierarchy depth
-	int layerFinest=depth+1; // what is the finest layer we want to solve?
+	int depth=8; // hierarchy depth
+	int layerFinest=depth; // what is the finest layer we want to solve?
 	int layerCoarsest=1; // coarsest layer to solve on. sometimes skip a few layers at the top
 
 	int msg; // store return codes from functions
 
 	///////////////////////////////////////////////
 	// problem setup
-	TMultiScaleSetupGrid MultiScaleSetup(&muX,&muY,depth);
-	msg=MultiScaleSetup.Setup();
+	TMultiScaleSetupSingleGrid MultiScaleSetupX(&muX,depth);
+	msg=MultiScaleSetupX.Setup();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupRadii();
+	msg=MultiScaleSetupX.SetupRadii();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
-	msg=MultiScaleSetup.SetupDuals();
+	msg=MultiScaleSetupX.SetupDuals();
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
 	
+
+	TMultiScaleSetupSingleGrid MultiScaleSetupY(&muY,depth);
+	msg=MultiScaleSetupY.Setup();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	msg=MultiScaleSetupY.SetupRadii();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+	msg=MultiScaleSetupY.SetupDuals();
+	if(msg!=0) { printf("error: %d\n",msg); return msg; }
+
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// setup a cost function provider
 	THierarchicalCostFunctionProvider_SquaredEuclidean costProvider(
-		MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-		MultiScaleSetup.xRadii, MultiScaleSetup.yRadii,
+		MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+		MultiScaleSetupX.radii, MultiScaleSetupY.radii,
 		muX.depth, layerFinest,
 		true,
-		MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+		MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 		1.);
 
 
@@ -635,7 +682,7 @@ int W2Grid_256x256() {
 	int epsSteps=20;
 	
 	TEpsScalingHandler epsScalingHandler(epsStart,epsTarget,epsSteps); // basic eps scaling
-	epsScalingHandler.getEpsScalesFromBox(muXdim[0],2,MultiScaleSetup.nLayers); // eps scales for each layer
+	epsScalingHandler.getEpsScalesFromBox(muXdim[0],2,MultiScaleSetupX.nLayers); // eps scales for each layer
 	msg=epsScalingHandler.getEpsScalingSplit(layerCoarsest,1); // create sub eps lists for each layer
 		// according to scales in line above
 	if(msg!=0) { printf("error: %d\n",msg); return msg; }
@@ -655,13 +702,13 @@ int W2Grid_256x256() {
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// create solver object
 	TSinkhornSolverStandard SinkhornSolver(
-			MultiScaleSetup.nLayers,
+			MultiScaleSetupX.nLayers,
 			epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
 			layerCoarsest, layerFinest,
 			cfg,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
-			MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
+			MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 			&costProvider
 			);
 	

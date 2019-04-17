@@ -169,6 +169,17 @@ int TSinkhornSolverBarycenter::iterate(const int n) {
 	
 	for(int i=0;i<n;i++) { // iterate over number of iterations
 	
+		// u-update
+		for(int j=0;j<nMarginals;j++) {
+			u[j]=Eigen::Map<TMarginalVector>(mu[j],res[j]).cwiseQuotient(kernel[j]*v[j]);
+			if(!u[j].allFinite()) {
+				eprintf("\tNAN in u[%d]\n",j);
+				return MSG_NANSCALING;
+			}
+		}
+
+
+
 		// v-update	
 		
 		// first compute averages (that handle the "communication" between all marginals)
@@ -201,20 +212,12 @@ int TSinkhornSolverBarycenter::iterate(const int n) {
 			TMarginalVector vNew=(logConvAvg-absorbedAvg/eps-logConvList[j]).array().exp().matrix();
 			// only apply new value outside of zero set. on zero set keep old values
 			v[j]=(zeroSet>0).select(v[j],vNew);
-			if(v[j].hasNaN()) {
+			if(!v[j].allFinite()) {
 				eprintf("\tNAN in v[%d]\n",j);
 				return MSG_NANSCALING;
 			}
 		}
 		
-		// u-update
-		for(int j=0;j<nMarginals;j++) {
-			u[j]=Eigen::Map<TMarginalVector>(mu[j],res[j]).cwiseQuotient(kernel[j]*v[j]);
-			if(u[j].hasNaN()) {
-				eprintf("\tNAN in u[%d]\n",j);
-				return MSG_NANSCALING;
-			}
-		}
 	}	
 		
 		
@@ -305,20 +308,33 @@ int TSinkhornSolverBarycenterKLMarginals::iterate(const int n) {
 	
 	std::vector<TMarginalArray> convolution(nMarginals);
 	for(int i=0;i<n;i++) { // iterate over number of iterations
+
+		// u-update
+		for(int j=0;j<nMarginals;j++) {
+			convolution[j]=(kernel[j]*v[j]).array();
+			TMarginalArrayInt zeroSet=(convolution[j]<DBL_ZEROCOLTOLERANCE).cast<int>();
+			TMarginalVector uNew=(
+					(Eigen::Map<TMarginalArray>(mu[j],res[j])/convolution[j]).pow(kappa/(kappa+eps))
+					*(Eigen::Map<TMarginalArray>(alpha[j],res[j])/(-kappa-eps)).exp()
+					).matrix();
+			u[j]=(zeroSet>0).select(u[j],uNew);
+			if(!u[j].allFinite()) {
+				eprintf("\tNAN in u[%d]\n",j);
+				return MSG_NANSCALING;
+			}
+		}
+
 	
 		// v-update	
 		
 		// phi is aux variable that contains some form of average over all convolutions
 		TMarginalArray phi=TMarginalArray::Constant(zres,0.);
-		// indicator of where one of the kernel columns is empty and thus the iteration is not defined
-		TMarginalArrayInt zeroSet=TMarginalArrayInt::Constant(zres,0);
+
 		
 		for(int j=0;j<nMarginals;j++) { // iterate over number of marginals
 			convolution[j]=(kernelT[j]*u[j]).array(); // convolution with (transposed) kernel
 			//cout << "conv" << j << endl << convolution[j] << endl << endl;
 			
-			// add entries where convolution is zero (i.e. kernel col is empty) to zero set
-			zeroSet+=(convolution[j]<DBL_ZEROCOLTOLERANCE).cast<int>();
 			phi+=weights[j]*convolution[j].pow(eps/(eps+kappa))
 					*(Eigen::Map<TMarginalArray>(beta[j],zres)/(-kappa-eps)).exp();
 			//phi+=weights[i]*((a[i])**(eps/(prefac+eps)))*np.exp(-alphaList[n+i]/(prefac+eps))
@@ -341,27 +357,16 @@ int TSinkhornSolverBarycenterKLMarginals::iterate(const int n) {
 			//scalingList[n+i][:]=phi/(a[i]**(prefac/(prefac+eps)))*np.exp(-alphaList[n+i]/(prefac+eps))
 					
 			// only apply new value outside of zero set. on zero set keep old values
+			TMarginalArrayInt zeroSet=(convolution[j]<DBL_ZEROCOLTOLERANCE).cast<int>();
+
 			v[j]=(zeroSet>0).select(v[j],vNew);
-			if(v[j].hasNaN()) {
+			if(!v[j].allFinite()) {
 				eprintf("\tNAN in v[%d]\n",j);				
 				return MSG_NANSCALING;
 			}
+			v[j]=v[j].cwiseMax(DBL_MINSCALING);
 		}
 		
-		// u-update
-		for(int j=0;j<nMarginals;j++) {
-			convolution[j]=(kernel[j]*v[j]).array();
-			zeroSet=(convolution[j]<DBL_ZEROCOLTOLERANCE).cast<int>();
-			TMarginalVector uNew=(
-					(Eigen::Map<TMarginalArray>(mu[j],res[j])/convolution[j]).pow(kappa/(kappa+eps))
-					*(Eigen::Map<TMarginalArray>(alpha[j],res[j])/(-kappa-eps)).exp()
-					).matrix();
-			u[j]=(zeroSet>0).select(u[j],uNew);
-			if(u[j].hasNaN()) {
-				eprintf("\tNAN in u[%d]\n",j);
-				return MSG_NANSCALING;
-			}
-		}
 	}	
 		
 		
@@ -377,6 +382,15 @@ int TSinkhornSolverBarycenterKLMarginals::getError(double * const result) {
 	if(msg!=0) { return msg; }
 	
 	(*result)=scorePrimal-scoreDual;
+
+	eprintf("score primal: %e\n",scorePrimal);
+	eprintf("score dual: %e\n",scoreDual);
+	eprintf("error: %e\n",*result);
+	
+	if (!std::isfinite((*result))) {
+		return MSG_NANINERROR;
+	}
+
 	return 0;
 	
 
@@ -413,7 +427,6 @@ int TSinkhornSolverBarycenterKLMarginals::getScorePrimal(double * const result) 
 				-eps*outerMarginals[i].sum());
 		
 	}
-
 	return 0;
 
 

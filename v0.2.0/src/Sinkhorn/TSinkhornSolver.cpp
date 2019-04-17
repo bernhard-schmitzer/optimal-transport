@@ -39,6 +39,12 @@ int TSinkhornSolverBase::changeLayer(const int newLayer) {
 	return 0;
 }
 
+void TSinkhornSolverBase::updateParameters(TSinkhornSolverParameters newCfg) {
+	cfg=newCfg;
+	kernelValid=false;
+}
+
+
 
 int TSinkhornSolverBase::solveSingle() {
 	int nIterations=0;
@@ -192,6 +198,7 @@ TSinkhornSolverStandard::TSinkhornSolverStandard(
 		TSinkhornSolverParameters _cfg,
 		THierarchicalPartition *_HPX, THierarchicalPartition *_HPY,
 		double **_muXH, double **_muYH,
+		double **_rhoXH, double **_rhoYH,
 		double **_alphaH, double **_betaH,		
 		THierarchicalCostFunctionProvider *_costProvider
 		) : TSinkhornSolverBase(_nLayers, _nEpsList, _epsLists, _layerCoarsest, _layerFinest, _cfg) {
@@ -200,6 +207,8 @@ TSinkhornSolverStandard::TSinkhornSolverStandard(
 	HPY=_HPY;
 	muXH=_muXH;
 	muYH=_muYH;
+	rhoXH=_rhoXH;
+	rhoYH=_rhoYH;
 	alphaH=_alphaH;
 	betaH=_betaH;
 	costProvider=_costProvider;
@@ -257,8 +266,8 @@ int TSinkhornSolverStandard::changeLayer(const int newLayer) {
 
 	// adjust kernel generator
 	kernelGenerator->layerBottom=layer;
-	kernelGenerator->muX=muXH[layer];
-	kernelGenerator->muY=muYH[layer];
+	kernelGenerator->muX=rhoXH[layer];
+	kernelGenerator->muY=rhoYH[layer];
 
 	// set short cut variables for current layer
 	xres=HPX->layers[layer]->nCells;
@@ -328,8 +337,8 @@ int TSinkhornSolverStandard::iterate(const int n) {
 	Eigen::Map<TMarginalVector> muYVec(muY,yres);
 
 	for(int i=0;i<n;i++) {
-		v=muYVec.cwiseQuotient(kernelT*u);
 		u=muXVec.cwiseQuotient(kernel*v);
+		v=muYVec.cwiseQuotient(kernelT*u);
 	}
 	if( (!u.allFinite()) || (!v.allFinite()) ) {
 		return MSG_NANSCALING;
@@ -339,23 +348,23 @@ int TSinkhornSolverStandard::iterate(const int n) {
 
 
 int TSinkhornSolverStandard::getError(double * const result) {
-//	// return L1 error of first marginal
-//	TMarginalVector muXEff=u.cwiseProduct(kernel*v);
-//	if(muXEff.hasNaN()) {
-//		return MSG_NANINERROR;
-//	}
-//	Eigen::Map<TMarginalVector> muXVec(muX,xres);
-//	(*result)=(muXEff-muXVec).lpNorm<1>();
-//	return 0;
-
-	// return L1 error of second marginal
-	TMarginalVector muYEff=v.cwiseProduct(kernelT*u);
-	if(muYEff.hasNaN()) {
+	// return L1 error of first marginal
+	TMarginalVector muXEff=u.cwiseProduct(kernel*v);
+	if(muXEff.hasNaN()) {
 		return MSG_NANINERROR;
 	}
-	Eigen::Map<TMarginalVector> muYVec(muY,yres);
-	(*result)=(muYEff-muYVec).lpNorm<1>();
+	Eigen::Map<TMarginalVector> muXVec(muX,xres);
+	(*result)=(muXEff-muXVec).lpNorm<1>();
 	return 0;
+
+//	// return L1 error of second marginal
+//	TMarginalVector muYEff=v.cwiseProduct(kernelT*u);
+//	if(muYEff.hasNaN()) {
+//		return MSG_NANINERROR;
+//	}
+//	Eigen::Map<TMarginalVector> muYVec(muY,yres);
+//	(*result)=(muYEff-muYVec).lpNorm<1>();
+//	return 0;
 
 
 }

@@ -63,6 +63,7 @@ public:
 	virtual int changeEps(const double newEps);
 	virtual int refineDuals(__attribute__((unused)) const int newLayer) { return ERR_BASE_NOTIMPLEMENTED; };
 	virtual int changeLayer(const int newLayer);
+	virtual void updateParameters(TSinkhornSolverParameters newCfg);
 
 	virtual int iterate(__attribute__((unused)) const int n) { return ERR_BASE_NOTIMPLEMENTED; };
 	virtual int checkAbsorb(__attribute__((unused)) const double maxValue) { return ERR_BASE_NOTIMPLEMENTED; };
@@ -89,6 +90,8 @@ public:
 	// objects that are given from outside
 	THierarchicalPartition *HPX, *HPY;
 	double **muXH, **muYH;
+	// reference measures for entropy regularization
+	double **rhoXH, **rhoYH;
 	THierarchicalCostFunctionProvider *costProvider;
 	double **alphaH, **betaH;
 
@@ -110,9 +113,34 @@ public:
 		TSinkhornSolverParameters _cfg,
 		THierarchicalPartition *_HPX, THierarchicalPartition *_HPY,
 		double **_muXH, double **_muYH,
+		double **_rhoXH, double **_rhoYH,
 		double **_alphaH, double **_betaH,		
 		THierarchicalCostFunctionProvider *_costProvider
 		);
+
+	TSinkhornSolverStandard(
+		int _nLayers,
+		int *_nEpsList,
+		double **_epsLists,
+		int _layerCoarsest, int _layerFinest,
+		TSinkhornSolverParameters _cfg,
+		THierarchicalPartition *_HPX, THierarchicalPartition *_HPY,
+		double **_muXH, double **_muYH,
+		double **_alphaH, double **_betaH,		
+		THierarchicalCostFunctionProvider *_costProvider
+		) : TSinkhornSolverStandard(
+				_nLayers,
+				_nEpsList,
+				_epsLists,
+				_layerCoarsest, _layerFinest,
+				_cfg,
+				_HPX, _HPY,
+				_muXH, _muYH,
+				_muXH, _muYH,
+				_alphaH, _betaH,		
+				_costProvider
+				) {};
+
 
 	~TSinkhornSolverStandard();
 
@@ -125,6 +153,7 @@ public:
 	virtual int absorb();
 	virtual int generateKernel();
 	virtual int refineKernel();
+	
 
 	// model specific
 	virtual int iterate(const int n);

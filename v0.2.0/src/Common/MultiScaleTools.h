@@ -14,63 +14,63 @@
 #include<Common/THierarchicalCostFunctionProvider.h>
 
 
-class TMultiScaleSetupBase {
-public:
-	TDoubleMatrix *posX, *posY; // point clouds for marginal positions
-	double *muX, *muY; // pointers to marginal masses
-	int xres, yres; // integers for total cardinality of marginal points
-	int dim; // dimensionality of marginal positions
-	
-	// hierarchy
-	int depth; // parameter for controlling nr of layers in hierarchical partition
-	int nLayers; // number of layers (usually depth+2)
-	THierarchyBuilder *HBX,*HBY; // hierarchy builder classes
-	THierarchicalPartition *HPX,*HPY; // hierarchical partition classes
-	double **posXH, **posYH; // hierarchical positions
-	double **muXH,**muYH; // hierarchical masses
-	int *xresH, *yresH; // hierarchical marginal cardinality
-	int HierarchyBuilderChildMode; // mode for handling children nodes in hierarchy builder
-		// set to THierarchyBuilder::CM_Grid in constructor.
-		
-	// other hierarchical stuff (setup on demand)
-	double **alphaH, **betaH; // dual potentials
-	double **xRadii, **yRadii; // radii for hiearchical partition cells
-	// list of neighbour points for X
-	TVarListHandler **xNeighboursH;
-		
-	//////////////////////////////////////////////////////////////////////////////
-	
-	TMultiScaleSetupBase(TDoubleMatrix *_posX, TDoubleMatrix *_posY, double *_muX, double *_muY, int _depth);
-	virtual ~TMultiScaleSetupBase();
+//class TMultiScaleSetupBase {
+//public:
+//	TDoubleMatrix *posX, *posY; // point clouds for marginal positions
+//	double *muX, *muY; // pointers to marginal masses
+//	int xres, yres; // integers for total cardinality of marginal points
+//	int dim; // dimensionality of marginal positions
+//	
+//	// hierarchy
+//	int depth; // parameter for controlling nr of layers in hierarchical partition
+//	int nLayers; // number of layers (usually depth+2)
+//	THierarchyBuilder *HBX,*HBY; // hierarchy builder classes
+//	THierarchicalPartition *HPX,*HPY; // hierarchical partition classes
+//	double **posXH, **posYH; // hierarchical positions
+//	double **muXH,**muYH; // hierarchical masses
+//	int *xresH, *yresH; // hierarchical marginal cardinality
+//	int HierarchyBuilderChildMode; // mode for handling children nodes in hierarchy builder
+//		// set to THierarchyBuilder::CM_Grid in constructor.
+//		
+//	// other hierarchical stuff (setup on demand)
+//	double **alphaH, **betaH; // dual potentials
+//	double **xRadii, **yRadii; // radii for hiearchical partition cells
+//	// list of neighbour points for X
+//	TVarListHandler **xNeighboursH;
+//		
+//	//////////////////////////////////////////////////////////////////////////////
+//	
+//	TMultiScaleSetupBase(TDoubleMatrix *_posX, TDoubleMatrix *_posY, double *_muX, double *_muY, int _depth);
+//	virtual ~TMultiScaleSetupBase();
 
-	int BasicSetup();
-	int BasicMeasureChecks();
-	int SetupHierarchicalPartition(double *mu, double *pos, int res, int dim, int depth,
-			THierarchyBuilder **_HB, THierarchicalPartition **_HP, double ***_posH, double ***_muH, int **_resH);
-	virtual int SetupHierarchicalPartitions();
-	
-	virtual int Setup();
-	virtual int SetupDuals();
-	virtual int SetupRadii();
-	
-};
+//	int BasicSetup();
+//	int BasicMeasureChecks();
+//	int SetupHierarchicalPartition(double *mu, double *pos, int res, int dim, int depth,
+//			THierarchyBuilder **_HB, THierarchicalPartition **_HP, double ***_posH, double ***_muH, int **_resH);
+//	virtual int SetupHierarchicalPartitions();
+//	
+//	virtual int Setup();
+//	virtual int SetupDuals();
+//	virtual int SetupRadii();
+//	
+//};
 
 
-class TMultiScaleSetupGrid : public TMultiScaleSetupBase {
-public:
-	// multidimensional arrays of marginal measures
-	TDoubleMatrix *muXGrid, *muYGrid;
-	// grid dimensions of each hierarchy level. required for shield generators
-	// these are contiguous flattened 2d arrays with dimensions nLayers*dim
-	int *xDimH,*yDimH;
-	
-	TMultiScaleSetupGrid(TDoubleMatrix *_muXGrid, TDoubleMatrix *_muYGrid, int _depth);
-	int SetupHierarchicalPartitions();
-	int SetupGridNeighboursX();
-	// destructor
-	virtual ~TMultiScaleSetupGrid();
-	
-};
+//class TMultiScaleSetupGrid : public TMultiScaleSetupBase {
+//public:
+//	// multidimensional arrays of marginal measures
+//	TDoubleMatrix *muXGrid, *muYGrid;
+//	// grid dimensions of each hierarchy level. required for shield generators
+//	// these are contiguous flattened 2d arrays with dimensions nLayers*dim
+//	int *xDimH,*yDimH;
+//	
+//	TMultiScaleSetupGrid(TDoubleMatrix *_muXGrid, TDoubleMatrix *_muYGrid, int _depth);
+//	int SetupHierarchicalPartitions();
+//	int SetupGridNeighboursX();
+//	// destructor
+//	virtual ~TMultiScaleSetupGrid();
+//	
+//};
 
 // Barycenter Version
 
@@ -176,4 +176,87 @@ public:
 };
 
 
+// Single marginal setup
+
+class TMultiScaleSetupSingleBase {
+public:
+	TDoubleMatrix *pos; // point clouds for marginal positions
+	double *mu; // pointers to marginal masses
+	int res; // integers for total cardinality of marginal points
+	int dim; // dimensionality of marginal positions
+	
+	// hierarchy
+	int depth; // parameter for controlling nr of layers in hierarchical partition
+	int nLayers; // number of layers (usually depth+2)
+	THierarchyBuilder *HB; // hierarchy builder classes
+	THierarchicalPartition *HP; // hierarchical partition classes
+	double **posH; // hierarchical positions
+	double **muH; // hierarchical masses
+	int *resH; // hierarchical marginal cardinality
+	int HierarchyBuilderChildMode; // mode for handling children nodes in hierarchy builder
+		// set to THierarchyBuilder::CM_Grid in constructor.
+		
+	// other hierarchical stuff (setup on demand)
+	double **alphaH; // dual potentials
+	double **radii; // radii for hiearchical partition cells
+	// list of neighbour points for X
+	TVarListHandler **neighboursH;
+		
+	//////////////////////////////////////////////////////////////////////////////
+	
+	TMultiScaleSetupSingleBase(TDoubleMatrix *_pos, double *_mu, int _depth);
+	virtual ~TMultiScaleSetupSingleBase();
+
+	int BasicSetup();
+	int BasicMeasureChecks();
+	virtual int SetupHierarchicalPartition();
+	
+	virtual int Setup();
+	virtual int SetupDuals();
+	virtual int SetupRadii();
+	
+};
+
+// Cartesian grid version
+
+class TMultiScaleSetupSingleGrid : public TMultiScaleSetupSingleBase {
+public:
+	// multidimensional array of marginal measure
+	TDoubleMatrix *muGrid;
+	// grid dimensions of each hierarchy level. required for shield generators
+	// this is a contiguous flattened 2d array with dimensions nLayers*dim
+	int *dimH;
+	
+	TMultiScaleSetupSingleGrid(TDoubleMatrix *_muGrid, int _depth);
+	int SetupHierarchicalPartition();
+	int SetupGridNeighbours();
+	// destructor
+	virtual ~TMultiScaleSetupSingleGrid();
+	
+};
+
+
+class TMultiScaleSetupBarycenterContainer {
+// class that provides arrays for relevant fields of several TMultiScaleSetupSingleBase instances
+// to use these in a SinkhornBarycenter solver
+public:
+	int nMarginals;
+	THierarchicalPartition **HP,*HPZ; // hierarchical partition classes
+	double ***muH,**muZH; // hierarchical masses
+	double ***alphaH, ***betaH; // dual potentials
+	int **resH, *resZH; // cardinalities of layers
+	double *weights;
+	THierarchicalCostFunctionProvider **costProvider;
+
+	TMultiScaleSetupBarycenterContainer();
+	TMultiScaleSetupBarycenterContainer(const int _nMarginals);
+	~TMultiScaleSetupBarycenterContainer();
+	void setupEmpty(const int _nMarginals);
+	void cleanup();
+	void setMarginal(const int n, TMultiScaleSetupSingleBase &multiScaleSetup, const double weight);
+	void setCenterMarginal(TMultiScaleSetupSingleBase &multiScaleSetup);
+	void setCostFunctionProvider(const int n, THierarchicalCostFunctionProvider &costFunctionProvider);
+};
+
 #endif
+

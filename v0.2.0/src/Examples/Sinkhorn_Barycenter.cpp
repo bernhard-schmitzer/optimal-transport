@@ -80,9 +80,9 @@ int example_minimal(int example_mode, double WFRlenScale) {
 	
 	
 	// fundamental parameters
-	int depth=1;
+	int depth=2;
 	int layerCoarsest=1;
-	int layerFinest=depth+1;	
+	int layerFinest=depth;	
 	int dim=posX.dimensions[1]; // spatial dimension
 	// manage unbalanced mode
 	double WFRKLweight=4*std::pow(WFRlenScale,2);
@@ -317,9 +317,9 @@ int example_file(int example_mode, double WFRlenScale) {
 	
 	
 	// fundamental parameters
-	int depth=7;
+	int depth=8;
 	int layerCoarsest=2;
-	int layerFinest=depth+1;
+	int layerFinest=depth;
 	// manage unbalanced mode
 	double WFRKLweight=4*std::pow(WFRlenScale,2);
 	bool WFRmode;

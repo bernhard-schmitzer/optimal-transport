@@ -75,7 +75,7 @@ endif ( USE_LPSOLVE )
 
 
 # configure Sinkhorn
-option(USE_SINKHORN "Compile Sinkhorn solver" OFF)
+option(USE_SINKHORN "Compile Sinkhorn solver" ON)
 if( USE_SINKHORN )
 	# configure eigen library
 	set(EIGEN_LIBRARY "/usr/include/eigen3")

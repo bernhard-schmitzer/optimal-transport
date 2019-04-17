@@ -73,7 +73,7 @@ int W2Grid() {
 	muY.depth=2;
 	
 	// fundamental parameters
-	int depth=2; // hierarchy depth
+	int depth=3; // hierarchy depth
 
 	#ifdef USE_LEMON
 	// Lemon parameters	
@@ -108,34 +108,44 @@ int W2Grid() {
 	// that live on regular Cartesian grids with edge lenghts 1
 	
 	// the more general base class TMultiScaleSetupBasefor uses marginals with support on arbitrary point clouds
-	TMultiScaleSetupGrid MultiScaleSetup(&muX,&muY,depth);
-	msg=MultiScaleSetup.Setup();
+	TMultiScaleSetupSingleGrid MultiScaleSetupX(&muX,depth);
+	msg=MultiScaleSetupX.Setup();
 	if(msg!=0) {
 		printf("%d\n",msg);
 		return msg;
 	}
+
+
+	TMultiScaleSetupSingleGrid MultiScaleSetupY(&muY,depth);
+	msg=MultiScaleSetupY.Setup();
+	if(msg!=0) {
+		printf("%d\n",msg);
+		return msg;
+	}
+
+
 	
 	// setup various aux components for actual solver algorithm
 	TCostFunctionProvider_Dynamic costFunctionProvider(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-			MultiScaleSetup.nLayers, MultiScaleSetup.dim);
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+			MultiScaleSetupX.nLayers, MultiScaleSetupX.dim);
 	
 	TShieldGeneratorGrid_SqrEuclidean shieldGenerator(
-			MultiScaleSetup.dim,
-			MultiScaleSetup.xDimH, MultiScaleSetup.yDimH,
-			MultiScaleSetup.nLayers);
+			MultiScaleSetupX.dim,
+			MultiScaleSetupX.dimH, MultiScaleSetupY.dimH,
+			MultiScaleSetupX.nLayers);
 			
 	TShortCutCouplingHandlerInterface couplingHandlerInterface(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.nLayers);
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.nLayers);
 	
 	
 	#ifdef USE_CPLEX
 	// LP subsolver: CPLEX 
 	TShortCutSubSolverInterfaceCPLEX subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -144,8 +154,8 @@ int W2Grid() {
 	#ifdef USE_LEMON
 	// LP subsolver: Lemon
 	TShortCutSubSolverInterfaceLemon subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,
 			measureScale, cScale,
 			dualOffset);
@@ -156,8 +166,8 @@ int W2Grid() {
 	#ifdef USE_LPSOLVE
 	// LP subsolver: lp_solve 
 	TShortCutSubSolverInterfaceLpSolve subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -171,7 +181,7 @@ int W2Grid() {
 			&couplingHandlerInterface,
 			&subSolverInterface,
 			&shieldGenerator,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
 			1, // coarsest layer
 			VIOLATION_CHECKMODE
 			);
@@ -197,11 +207,11 @@ int W2Grid() {
 	
 	printf("optimal dual variables\n");
 	printf("alpha\n");
-	for(int i=0;i<MultiScaleSetup.xres;i++) {
+	for(int i=0;i<MultiScaleSetupX.res;i++) {
 		printf("\t%f\n",MultiScaleSolver.alpha[i]);
 	}
 	printf("beta\n");
-	for(int i=0;i<MultiScaleSetup.yres;i++) {
+	for(int i=0;i<MultiScaleSetupY.res;i++) {
 		printf("\t%f\n",MultiScaleSolver.beta[i]);
 	}
 	
@@ -211,8 +221,8 @@ int W2Grid() {
 	
 	double cost;
 	bool violated=false;
-	for(int x=0;x<MultiScaleSetup.xres;x++) {
-		for(int y=0;y<MultiScaleSetup.yres;y++) {
+	for(int x=0;x<MultiScaleSetupX.res;x++) {
+		for(int y=0;y<MultiScaleSetupY.res;y++) {
 			cost=costFunctionProvider.getCValue(x,y);
 			#ifdef USE_LEMON
 			cost=((int) (cost/cScale))*cScale;
@@ -263,7 +273,7 @@ int WpGrid() {
 
 
 	// fundamental parameters
-	int depth=2; // hierarchy depth
+	int depth=3; // hierarchy depth
 	double p=1.5; // exponent for Wp distance that we want to compute
 		// must be strictly >1., becomes slower as p approaches 1
 	
@@ -293,46 +303,56 @@ int WpGrid() {
 	// problem setup
 	// as above	
 	
-	TMultiScaleSetupGrid MultiScaleSetup(&muX,&muY,depth);
-	msg=MultiScaleSetup.Setup();
+	TMultiScaleSetupSingleGrid MultiScaleSetupX(&muX,depth);
+	msg=MultiScaleSetupX.Setup();
 	if(msg!=0) {
 		printf("%d\n",msg);
 		return msg;
 	}
+
+
+	TMultiScaleSetupSingleGrid MultiScaleSetupY(&muY,depth);
+	msg=MultiScaleSetupY.Setup();
+	if(msg!=0) {
+		printf("%d\n",msg);
+		return msg;
+	}
+
 	
 	// for general W_p distances the shielding neighbourhoods can no longer be
 	// constructed directly based on grid structure. extract more data for more general
 	// shielding method
-	MultiScaleSetup.SetupGridNeighboursX();
-	MultiScaleSetup.SetupRadii();
+	MultiScaleSetupX.SetupGridNeighbours();
+	MultiScaleSetupX.SetupRadii();
+	MultiScaleSetupY.SetupRadii();
 	
 	// use different class than in W2Grid() to describe general p-th power of Euclidean distance
 	TCostFunctionProvider_PEuclidean costFunctionProvider(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-			MultiScaleSetup.nLayers, MultiScaleSetup.dim,
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+			MultiScaleSetupX.nLayers, MultiScaleSetupX.dim,
 			p);
 
 	
 	// different, more involved ShieldGenerator class
 	TShieldGeneratorTree_PEuclidean shieldGenerator(
-			MultiScaleSetup.dim,
-			MultiScaleSetup.HPY, MultiScaleSetup.posYH, MultiScaleSetup.yRadii,
+			MultiScaleSetupX.dim,
+			MultiScaleSetupY.HP, MultiScaleSetupY.posH, MultiScaleSetupY.radii,
 			0 /* finest layer */, 0 /* coarsest layer */,
-			MultiScaleSetup.xresH, MultiScaleSetup.posXH, MultiScaleSetup.xNeighboursH,
+			MultiScaleSetupX.resH, MultiScaleSetupX.posH, MultiScaleSetupX.neighboursH,
 			p,0.);
 			
 						
 	TShortCutCouplingHandlerInterface couplingHandlerInterface(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.nLayers);
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.nLayers);
 	
 	
 	#ifdef USE_CPLEX
 	// LP subsolver: CPLEX 
 	TShortCutSubSolverInterfaceCPLEX subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -341,8 +361,8 @@ int WpGrid() {
 	#ifdef USE_LEMON
 	// LP subsolver: Lemon
 	TShortCutSubSolverInterfaceLemon subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,
 			measureScale, cScale,
 			dualOffset);
@@ -353,8 +373,8 @@ int WpGrid() {
 	#ifdef USE_LPSOLVE
 	// LP subsolver: lp_solve 
 	TShortCutSubSolverInterfaceLpSolve subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -368,7 +388,7 @@ int WpGrid() {
 			&couplingHandlerInterface,
 			&subSolverInterface,
 			&shieldGenerator,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
 			1, // coarsest layer
 			VIOLATION_CHECKMODE
 			);
@@ -415,7 +435,7 @@ int W2Grid_64x64() {
 	muY.depth=2;
 	
 	// fundamental parameters
-	int depth=5; // hierarchy depth
+	int depth=6; // hierarchy depth
 
 	#ifdef USE_LEMON
 	// Lemon parameters	
@@ -450,34 +470,42 @@ int W2Grid_64x64() {
 	// that live on regular Cartesian grids with edge lenghts 1
 	
 	// the more general base class TMultiScaleSetupBasefor uses marginals with support on arbitrary point clouds
-	TMultiScaleSetupGrid MultiScaleSetup(&muX,&muY,depth);
-	msg=MultiScaleSetup.Setup();
+	TMultiScaleSetupSingleGrid MultiScaleSetupX(&muX,depth);
+	msg=MultiScaleSetupX.Setup();
 	if(msg!=0) {
 		printf("%d\n",msg);
 		return msg;
 	}
+
+	TMultiScaleSetupSingleGrid MultiScaleSetupY(&muY,depth);
+	msg=MultiScaleSetupY.Setup();
+	if(msg!=0) {
+		printf("%d\n",msg);
+		return msg;
+	}
+
 	
 	// setup various aux components for actual solver algorithm
 	TCostFunctionProvider_Dynamic costFunctionProvider(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-			MultiScaleSetup.nLayers, MultiScaleSetup.dim);
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+			MultiScaleSetupX.nLayers, MultiScaleSetupX.dim);
 	
 	TShieldGeneratorGrid_SqrEuclidean shieldGenerator(
-			MultiScaleSetup.dim,
-			MultiScaleSetup.xDimH, MultiScaleSetup.yDimH,
-			MultiScaleSetup.nLayers);
+			MultiScaleSetupX.dim,
+			MultiScaleSetupX.dimH, MultiScaleSetupY.dimH,
+			MultiScaleSetupX.nLayers);
 			
 	TShortCutCouplingHandlerInterface couplingHandlerInterface(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.nLayers);
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.nLayers);
 	
 	
 	#ifdef USE_CPLEX
 	// LP subsolver: CPLEX 
 	TShortCutSubSolverInterfaceCPLEX subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -486,8 +514,8 @@ int W2Grid_64x64() {
 	#ifdef USE_LEMON
 	// LP subsolver: Lemon
 	TShortCutSubSolverInterfaceLemon subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,
 			measureScale, cScale,
 			dualOffset);
@@ -498,8 +526,8 @@ int W2Grid_64x64() {
 	#ifdef USE_LPSOLVE
 	// LP subsolver: lp_solve 
 	TShortCutSubSolverInterfaceLpSolve subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -513,7 +541,7 @@ int W2Grid_64x64() {
 			&couplingHandlerInterface,
 			&subSolverInterface,
 			&shieldGenerator,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
 			1, // coarsest layer
 			VIOLATION_CHECKMODE
 			);
@@ -549,7 +577,7 @@ int WpSphere() {
 	// fundamental parameters
 	int dim=3;
 	int res=muXdat.size();
-	int depth=4;
+	int depth=5;
 	int nNeighbours=5;
 	double p=2;
 	
@@ -581,62 +609,73 @@ int WpSphere() {
 	
 	///////////////////////////////////////////////
 
-	TMultiScaleSetupSphere MultiScaleSetup(&posX,&posX,muXdat.data(),muYdat.data(),depth);
-	MultiScaleSetup.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
-	msg=MultiScaleSetup.Setup();	
+	TMultiScaleSetupSingleSphere MultiScaleSetupX(&posX,muXdat.data(),depth);
+	MultiScaleSetupX.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupX.Setup();	
 	if(msg!=0) {
 		printf("%d\n",msg);
 		return msg;
 	}
+
+
+	TMultiScaleSetupSingleSphere MultiScaleSetupY(&posX,muYdat.data(),depth);
+	MultiScaleSetupY.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupY.Setup();	
+	if(msg!=0) {
+		printf("%d\n",msg);
+		return msg;
+	}
+
 	
 	printf("hierarchical cardinalities:\n");
-	for(int layer=0;layer<MultiScaleSetup.nLayers;layer++) {
-		printf("%d\t%d\n",layer,MultiScaleSetup.HPX->layers[layer]->nCells);
+	for(int layer=0;layer<MultiScaleSetupX.nLayers;layer++) {
+		printf("%d\t%d\n",layer,MultiScaleSetupX.HP->layers[layer]->nCells);
 	}
 	
 	
 	// first compute plain Euclidean radii, needed to determine nearest neighbours
-	msg=MultiScaleSetup.TMultiScaleSetupBase::SetupRadii();	
+	msg=MultiScaleSetupX.TMultiScaleSetupSingleBase::SetupRadii();	
 	// compute neighbours for x, based on Euclidean distances
-	MultiScaleSetup.xNeighboursH=THierarchicalNN::getNeighboursH(
-			MultiScaleSetup.posXH, MultiScaleSetup.xRadii,
-			MultiScaleSetup.HPX, nNeighbours);
+	MultiScaleSetupX.neighboursH=THierarchicalNN::getNeighboursH(
+			MultiScaleSetupX.posH, MultiScaleSetupX.radii,
+			MultiScaleSetupX.HP, nNeighbours);
 	// free Euclidean radii data
-	MultiScaleSetup.HPX->signal_free_double(MultiScaleSetup.xRadii, 0, MultiScaleSetup.nLayers-2);
-	MultiScaleSetup.HPY->signal_free_double(MultiScaleSetup.yRadii, 0, MultiScaleSetup.nLayers-2);
+	MultiScaleSetupX.HP->signal_free_double(MultiScaleSetupX.radii, 0, MultiScaleSetupX.nLayers-2);
 	
 	
 	// project points back to sphere
-	MultiScaleSetup.SetupProjectPoints();
+	MultiScaleSetupX.SetupProjectPoints();
+	MultiScaleSetupY.SetupProjectPoints();
 	// compute sphere radii
-	MultiScaleSetup.SetupRadii();
+	MultiScaleSetupX.SetupRadii();
+	MultiScaleSetupY.SetupRadii();
 	
 	
 	
 	TCostFunctionProvider_Sphere costFunctionProvider(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-			MultiScaleSetup.nLayers, MultiScaleSetup.dim,
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+			MultiScaleSetupX.nLayers, MultiScaleSetupX.dim,
 			p);
 
 	
 			
 	TShieldGeneratorTree_Sphere shieldGenerator(
-			MultiScaleSetup.dim,
-			MultiScaleSetup.HPY, MultiScaleSetup.posYH, MultiScaleSetup.yRadii,
+			MultiScaleSetupX.dim,
+			MultiScaleSetupY.HP, MultiScaleSetupY.posH, MultiScaleSetupY.radii,
 			0 /* finest layer */, 0 /* coarsest layer */,
-			MultiScaleSetup.xresH, MultiScaleSetup.posXH, MultiScaleSetup.xNeighboursH,
+			MultiScaleSetupX.resH, MultiScaleSetupX.posH, MultiScaleSetupX.neighboursH,
 			p);
 	
 	TShortCutCouplingHandlerInterface couplingHandlerInterface(
-			MultiScaleSetup.xresH, MultiScaleSetup.yresH,
-			MultiScaleSetup.nLayers);
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.nLayers);
 	
 	#ifdef USE_CPLEX
 	// LP subsolver: CPLEX 
 	TShortCutSubSolverInterfaceCPLEX subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -645,8 +684,8 @@ int WpSphere() {
 	#ifdef USE_LEMON
 	// LP subsolver: Lemon
 	TShortCutSubSolverInterfaceLemon subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,
 			measureScale, cScale,
 			dualOffset);
@@ -657,8 +696,8 @@ int WpSphere() {
 	#ifdef USE_LPSOLVE
 	// LP subsolver: lp_solve 
 	TShortCutSubSolverInterfaceLpSolve subSolverInterface(
-			MultiScaleSetup.nLayers,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
+			MultiScaleSetupX.nLayers,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
 			&couplingHandlerInterface,true);
 	
 	static constexpr int VIOLATION_CHECKMODE=TShortCutSolver::VCHECK_DUAL;		
@@ -672,7 +711,7 @@ int WpSphere() {
 			&couplingHandlerInterface,
 			&subSolverInterface,
 			&shieldGenerator,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
 			1, // coarsest layer
 			VIOLATION_CHECKMODE
 			);

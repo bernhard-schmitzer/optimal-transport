@@ -50,20 +50,19 @@ public:
 ///////////////////////////////////////////////////////////////////////////////////////////////////	
 
 
-class TMultiScaleSetupSphere : public TMultiScaleSetupBase {
+class TMultiScaleSetupSingleSphere : public TMultiScaleSetupSingleBase {
 public:
 	
 	static constexpr double sphereCenterTolerance=1E-14;
 	// points with length smaller than this will be projected to northpole
 
 	// inherit constructor
-	TMultiScaleSetupSphere(TDoubleMatrix *_posX, TDoubleMatrix *_posY, double *_muX, double *_muY, int _depth) :
-		TMultiScaleSetupBase(_posX,_posY,_muX,_muY,_depth) {};
+	TMultiScaleSetupSingleSphere(TDoubleMatrix *_pos, double *_mu, int _depth) :
+		TMultiScaleSetupSingleBase(_pos,_mu,_depth) {};
 	
 	int SetupProjectPoints();
 	int SetupProjectPoints_Array(double *pos, int n, int dim);
 	int SetupRadii();
-	int SetupRadii_Single(THierarchicalPartition *HPA, double **aPosH, double ***aRadii);
 	
 	double SphereDistance(double *posx, double *posy);
 };

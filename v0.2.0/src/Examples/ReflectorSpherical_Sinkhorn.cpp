@@ -8,7 +8,6 @@ int main() {
 	int msg;
 	
 	// read raw data from file
-	// read raw data from file
 	char filenamePosX[]="data/reflector_sphere/posX_9771.dat";
 	char filenamePosY[]="data/reflector_sphere/posY_10800_Monge.dat";
 	char filenameMuX[]="data/reflector_sphere/muX_9771.dat";
@@ -41,40 +40,56 @@ int main() {
 	posY.depth=2;
 
 		
-	int depth=5;
+	int depth=6;
 	int layerCoarsest=0;
-	int layerFinest=depth+1;
+	int layerFinest=depth;
 
 	
 	///////////////////////////////////////////////
 
-	TMultiScaleSetupSphere MultiScaleSetup(&posX,&posY,muXdat.data(),muYdat.data(),depth);
-	MultiScaleSetup.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
-	msg=MultiScaleSetup.Setup();	
+	TMultiScaleSetupSingleSphere MultiScaleSetupX(&posX,muXdat.data(),depth);
+	MultiScaleSetupX.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupX.Setup();	
 	if(msg!=0) { eprintf("error: %d\n",msg); return msg; }	
 	// project points back to sphere
-	MultiScaleSetup.SetupProjectPoints();
+	MultiScaleSetupX.SetupProjectPoints();
 	// compute sphere radii
-	msg=MultiScaleSetup.SetupRadii();
+	msg=MultiScaleSetupX.SetupRadii();
 	if(msg!=0) { eprintf("error: %d\n",msg); return msg; }
 	// allocate hierarchical dual variables
-	msg=MultiScaleSetup.SetupDuals();
+	msg=MultiScaleSetupX.SetupDuals();
 	if(msg!=0) { eprintf("error: %d\n",msg); return msg; }
+
+
+	TMultiScaleSetupSingleSphere MultiScaleSetupY(&posY,muYdat.data(),depth);
+	MultiScaleSetupY.HierarchyBuilderChildMode=THierarchyBuilder::CM_Tree;
+	msg=MultiScaleSetupY.Setup();	
+	if(msg!=0) { eprintf("error: %d\n",msg); return msg; }	
+	// project points back to sphere
+	MultiScaleSetupY.SetupProjectPoints();
+	// compute sphere radii
+	msg=MultiScaleSetupY.SetupRadii();
+	if(msg!=0) { eprintf("error: %d\n",msg); return msg; }
+	// allocate hierarchical dual variables
+	msg=MultiScaleSetupY.SetupDuals();
+	if(msg!=0) { eprintf("error: %d\n",msg); return msg; }
+
+
 	
 	eprintf("hierarchical cardinalities:\n");
-	for(int layer=0;layer<MultiScaleSetup.nLayers;layer++) {
-		eprintf("%d\t%d\n",layer,MultiScaleSetup.HPX->layers[layer]->nCells);
+	for(int layer=0;layer<MultiScaleSetupX.nLayers;layer++) {
+		eprintf("%d\t%d\n",layer,MultiScaleSetupX.HP->layers[layer]->nCells);
 	}
 	
 	
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// setup a cost function provider
 	THierarchicalCostFunctionProvider_Reflector costProvider(
-		MultiScaleSetup.posXH, MultiScaleSetup.posYH,
-		MultiScaleSetup.xRadii, MultiScaleSetup.yRadii,
+		MultiScaleSetupX.posH, MultiScaleSetupY.posH,
+		MultiScaleSetupX.radii, MultiScaleSetupY.radii,
 		dim, 0,
 		true,
-		MultiScaleSetup.alphaH, MultiScaleSetup.betaH
+		MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH
 		);
 	
 	
@@ -86,7 +101,7 @@ int main() {
 	double epsBoxScale=.7;
 	
 	TEpsScalingHandler epsScalingHandler(epsStart,epsTarget,epsSteps); // basic eps scaling
-	epsScalingHandler.getEpsScalesFromBox(epsBoxScale,2.,MultiScaleSetup.nLayers); // eps scales for each layer
+	epsScalingHandler.getEpsScalesFromBox(epsBoxScale,2.,MultiScaleSetupX.nLayers); // eps scales for each layer
 	msg=epsScalingHandler.getEpsScalingSplit(layerCoarsest,1); // create sub eps lists
 	if(msg!=0) { eprintf("error: %d\n",msg); return msg; }
 
@@ -107,12 +122,12 @@ int main() {
 
 	/////////////////////////////////////////////////////////////////////////////////////////
 	// create solver object
-	TSinkhornSolverStandard SinkhornSolver(MultiScaleSetup.nLayers, epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
+	TSinkhornSolverStandard SinkhornSolver(MultiScaleSetupX.nLayers, epsScalingHandler.nEpsLists, epsScalingHandler.epsLists,
 			layerCoarsest, layerFinest,
 			cfg,
-			MultiScaleSetup.HPX, MultiScaleSetup.HPY,
-			MultiScaleSetup.muXH, MultiScaleSetup.muYH,
-			MultiScaleSetup.alphaH, MultiScaleSetup.betaH,
+			MultiScaleSetupX.HP, MultiScaleSetupY.HP,
+			MultiScaleSetupX.muH, MultiScaleSetupY.muH,
+			MultiScaleSetupX.alphaH, MultiScaleSetupY.alphaH,
 			&costProvider
 			);
 	

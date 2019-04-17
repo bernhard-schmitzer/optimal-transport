@@ -7,11 +7,13 @@ THierarchyBuilder::THierarchyBuilder(double *_points, int _nPoints, int _dim,
 		int _childMode, int partitionDepth) :
 		points(_points), nPoints(_nPoints), dim(_dim), childMode(_childMode) {
 	
-	setBox();
-	reset();
-	// refine
-	for(int i=0;i<partitionDepth;i++) {
-		refine();
+	if (partitionDepth>0) {
+		setBox();
+		setRoot();
+		// refine
+		for(int i=0;i<partitionDepth-1;i++) {
+			refine();
+		}
 	}
 	addAtomicLayer();
 	
@@ -28,7 +30,7 @@ void THierarchyBuilder::setBox() {
 }
 		
 
-void THierarchyBuilder::reset() {
+void THierarchyBuilder::setRoot() {
 	// build top layer with only one node
 	layers.resize(1);
 	layers[0].nodes.resize(1);
@@ -203,18 +205,22 @@ void THierarchyBuilder::addAtomicLayer() {
 	int layerId=layers.size()-1;
 	
 	layers[layerId].nodes.resize(nPoints);
-	// write parent values
-	// iterate over coarse nodes
-	for(int i=0;i<(int) layers[layerId-1].nodes.size();i++) {
-		// iterate over all leaves, set children to leaves and set parent value at all children
-		layers[layerId-1].nodes[i].children=layers[layerId-1].nodes[i].leaves;
-		for(int j=0;j<(int) layers[layerId-1].nodes[i].leaves.size();j++) {
-			layers[layerId].nodes[
-				layers[layerId-1].nodes[i].leaves[j]
-				].parent=i;
+	
+	if(layerId>0) {
+		// write parent values
+		// iterate over coarse nodes
+		for(int i=0;i<(int) layers[layerId-1].nodes.size();i++) {
+			// iterate over all leaves, set children to leaves and set parent value at all children
+			layers[layerId-1].nodes[i].children=layers[layerId-1].nodes[i].leaves;
+			for(int j=0;j<(int) layers[layerId-1].nodes[i].leaves.size();j++) {
+				layers[layerId].nodes[
+					layers[layerId-1].nodes[i].leaves[j]
+					].parent=i;
+			}
 		}
 	}
 }
+
 
 double THierarchyBuilder::max(double *x, int n, int step, int offset) {
 	double result=x[offset];

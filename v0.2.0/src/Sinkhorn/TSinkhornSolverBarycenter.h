@@ -20,7 +20,7 @@ class TSinkhornSolverBarycenter : public TSinkhornSolverBase {
 public:
 
 	static constexpr double DBL_ZEROCOLTOLERANCE=1E-100;
-
+	static constexpr double DBL_MINSCALING=1E-20;
 	// objects that are given from outside
 	int nMarginals; // number of marginals
 	double *weights; // weights for barycenter

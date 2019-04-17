@@ -40,7 +40,7 @@ public:
 			int _childMode, int partitionDepth);
 	
 	void setBox();
-	void reset();
+	void setRoot();
 	void refine();
 	std::vector<std::vector<int> > getChildrenPosCodes(int layerId, int nodeId);
 	std::vector<std::vector<int> > getChildrenLeaves(int layerId, int nodeId,
