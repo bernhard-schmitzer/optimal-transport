@@ -90,8 +90,8 @@ int main() {
 	
 	
 	TCostFunctionProvider_Reflector costFunctionProvider(
-			MultiScaleSetupX.resH, MultiScaleSetupX.resH,
-			MultiScaleSetupX.posH, MultiScaleSetupX.posH,
+			MultiScaleSetupX.resH, MultiScaleSetupY.resH,
+			MultiScaleSetupX.posH, MultiScaleSetupY.posH,
 			MultiScaleSetupX.nLayers, MultiScaleSetupX.dim
 			);
 	
